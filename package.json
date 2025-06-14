@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "concurrently \"node server.js\" \"next dev --turbopack\"",
     "build": "next build",
-    "start": "next start",
+    "start": "concurrently \"node server.js\" \"next start\"",
     "lint": "next lint"
   },
   "dependencies": {

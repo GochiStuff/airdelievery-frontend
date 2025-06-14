@@ -165,7 +165,7 @@ export default function RoomPage() {
 
         socket.on("flightUsers", (payload: { ownerId: string; members: string[] }) => {
             setOwnerId(payload.ownerId);
-            setMembers(payload.members);
+            // setMembers(payload.members);
         });
 
         // Handle signaling messages
