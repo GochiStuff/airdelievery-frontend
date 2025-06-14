@@ -21,7 +21,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
    const [socket, setSocket] = useState<Socket | null>(null);
    
     useEffect(() => {
-        const newSocket = io("http://localhost:4000");
+        const newSocket = io(process.env.NEXT_PUBLIC_SOCKET);
         setSocket(newSocket);
 
         return () => {
@@ -31,7 +31,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
     const reconnect = () => {
         socket?.disconnect();
-        const newSocket = io("http://localhost:4000");
+        const newSocket = io(process.env.NEXT_PUBLIC_SOCKET);
         setSocket(newSocket);
     }
 
