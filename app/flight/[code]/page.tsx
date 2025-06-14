@@ -225,13 +225,8 @@ export default function RoomPage() {
             addLog("Buffered ICE candidate because remoteDescription not set.");
         }
         });
-
-        // After setting remoteDescription (in offer/answer handlers):
         if (peer.current) {
-            // You need to provide the correct argument to setRemoteDescription here.
-            // Example: await peer.current.setRemoteDescription(remoteDescription);
-            // For now, this is a placeholder and should be replaced with actual logic.
-            // await peer.current.setRemoteDescription(remoteDescription);
+    
             addLog("Remote description set, flushing buffered ICE...");
         }
 
@@ -321,7 +316,7 @@ export default function RoomPage() {
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">File Transfer Room</h1>
-          <p className="mt-1 ">Code: <span className="font-mono bg-gray-100 p-1 rounded">{flightCode}</span></p>
+          <p className="mt-1 ">Code: <span className="font-mono  p-1 rounded">{flightCode}</span></p>
         </div>
         <div>
           <span className={
