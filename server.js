@@ -79,33 +79,12 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("ice-candidate", ({ code, candidate }) => {
-        if (typeof code !== "string" ||
-            !/^[A-Z0-9]+$/.test(code) ||
-            !candidate) {
-            console.warn("Invalid ICE candidate.");
-            return;
+    socket.on("ice-candidate", ({ to, candidate }) => {
+        console.log(to , candidate);
+        if (io.sockets.sockets.get(to)) {
+            io.to(to).emit("ice-candidate", { from: socket.id, candidate });
         }
-        const flight = flights.get(code);
-        if (!flight) {
-            console.warn("Flight not found.");
-            return;
-        }
-        if (socket.id === flight.ownerId) {
-            // Send candidate to all members
-            for (const memberId of flight.members) {
-                if (memberId !== socket.id && io.sockets.sockets.get(memberId)) {
-                    io.to(memberId).emit("ice-candidate", { from: socket.id, candidate });
-                }
-            }
-        } else {
-            // Send candidate back to owner
-            if (io.sockets.sockets.get(flight.ownerId)) {
-                io.to(flight.ownerId).emit("ice-candidate", { from: socket.id, candidate });
-            }
-        }
-    });
-
+    }); 
 
     socket.on("disconnect", () => {
         for (const [code, flight] of flights.entries()) {

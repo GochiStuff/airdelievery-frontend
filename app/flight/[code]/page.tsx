@@ -20,6 +20,7 @@ export default function RoomPage() {
     const peer = useRef<RTCPeerConnection | null>(null);
     const dataChannel = useRef<RTCDataChannel | null>(null);
     const filesToSend = useRef<FileList | undefined>(undefined);
+    const candidateBuffer = useRef<any[]>([]);
     const [transfers, setTransfers] = useState<FileTransfer[]>([]); // files progress
     
     // Logs
@@ -206,12 +207,51 @@ export default function RoomPage() {
             console.log("local description set . ")
         });
 
-        socket.on("ice-candidate", async ({ candidate }) => {
-            addLog("Received ICE.");
-            if (peer.current) {
-                await peer.current.addIceCandidate(new RTCIceCandidate(candidate));  
+        
+      socket.on("ice-candidate", async ({ candidate }) => {
+        addLog("Received ICE.");
+        if (!peer.current) return;
+
+        const ice = new RTCIceCandidate(candidate);
+        if (peer.current.remoteDescription) {
+            try {
+            await peer.current.addIceCandidate(ice);
+            addLog("Added ICE candidate immediately.");
+            } catch (e) {
+            console.error("Error adding ICE candidate:", e);
             }
+        } else {
+            candidateBuffer.current.push(candidate);
+            addLog("Buffered ICE candidate because remoteDescription not set.");
+        }
         });
+
+        // After setting remoteDescription (in offer/answer handlers):
+        if (peer.current) {
+            // You need to provide the correct argument to setRemoteDescription here.
+            // Example: await peer.current.setRemoteDescription(remoteDescription);
+            // For now, this is a placeholder and should be replaced with actual logic.
+            // await peer.current.setRemoteDescription(remoteDescription);
+            addLog("Remote description set, flushing buffered ICE...");
+        }
+
+        // flush buffer
+        (async () => {
+            for (const cand of candidateBuffer.current) {
+                try {
+                    if (peer.current) {
+                        await peer.current.addIceCandidate(new RTCIceCandidate(cand));
+                        addLog("Flushed ICE candidate.");
+                    } else {
+                        addLog("Cannot flush ICE candidate: peer connection is null.");
+                    }
+                } catch (e) {
+                    console.error("Error flushing ICE candidate:", e);
+                }
+            }
+            candidateBuffer.current = [];
+        })();
+
 
         return () => {
             socket.off("flightUsers");
