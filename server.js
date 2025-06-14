@@ -37,7 +37,7 @@ io.on("connection", (socket) => {
             ownerId: socket.id, 
             members: [socket.id],
             ownerConnected: true,
-            disconnectTimeout: null
+            disconnectTimeout: null,
         });
 
         socket.join(code);
@@ -49,31 +49,63 @@ io.on("connection", (socket) => {
     socket.on("joinFlight", (code , callback) => {
         if (flights.has(code)) {
             const flight = flights.get(code);
-            flight.members.push(socket.id);
             socket.join(code);
+            if(flight.ownerId !== socket.id){
+                flight.members.push(socket.id);
+                socket.emit("offer" , {sdp: flight.sdp});
+            }
+            
             callback({success: true});  
             broadcastUsers(code);
         } else {
             callback({success: false , message: "flight not found"});
         }
     });
+    socket.on("offer", (code, sdp) => {
+        const flight = flights.get(code);
+        if (!flight) {
+            console.error(`No flight found for code: ${code}`);
+            return;
+        }
+        console.log(sdp);
+        flight.sdp = sdp; 
+        console.log(`SDP updated for flight ${code}:`, flights.get(code));
 
-    socket.on("offer", ({to , sdp}) => {
-        if( io.sockets.sockets.get(to)){
-            io.to(to).emit("offer", {from: socket.id, sdp});
+    });
+    socket.on("answer", (code, { sdp }) => {
+        const flight = flights.get(code);
+        if (flight && io.sockets.sockets.get(flight.ownerId)) {
+            io.to(flight.ownerId).emit("answer", { from: socket.id, sdp });
         }
     });
-    socket.on("answer", ({ to, sdp }) => {
-        if (io.sockets.sockets.get(to)) {
-            io.to(to).emit("answer", { from: socket.id, sdp });
+
+    socket.on("ice-candidate", ({ code, candidate }) => {
+        if (typeof code !== "string" ||
+            !/^[A-Z0-9]+$/.test(code) ||
+            !candidate) {
+            console.warn("Invalid ICE candidate.");
+            return;
+        }
+        const flight = flights.get(code);
+        if (!flight) {
+            console.warn("Flight not found.");
+            return;
+        }
+        if (socket.id === flight.ownerId) {
+            // Send candidate to all members
+            for (const memberId of flight.members) {
+                if (memberId !== socket.id && io.sockets.sockets.get(memberId)) {
+                    io.to(memberId).emit("ice-candidate", { from: socket.id, candidate });
+                }
+            }
+        } else {
+            // Send candidate back to owner
+            if (io.sockets.sockets.get(flight.ownerId)) {
+                io.to(flight.ownerId).emit("ice-candidate", { from: socket.id, candidate });
+            }
         }
     });
 
-    socket.on("ice-candidate", ({ to, candidate }) => {
-        if (io.sockets.sockets.get(to)) {
-            io.to(to).emit("ice-candidate", { from: socket.id, candidate });
-        }
-    }); 
 
     socket.on("disconnect", () => {
         for (const [code, flight] of flights.entries()) {
