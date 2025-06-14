@@ -276,10 +276,31 @@ export default function RoomPage() {
             
             console.log("Sender peer")
 
+            function resetPeer() {
+                if (peer.current) {
+                    peer.current.onicecandidate = null;
+                    peer.current.ondatachannel = null;
+                    peer.current.close();
+                    peer.current = null;
+                }
+                candidateBuffer.current = [];
+                
+
+            }
+        
+
+
             dataChannel.current?.addEventListener("open", () => console.log("DataChannel opened."));
 
             dataChannel.current?.addEventListener("message", handleMessage);
             dataChannel.current?.addEventListener("error", (e) => addLog(`DataChannel Error: ${e}`));
+            peer.current?.addEventListener('connectionstatechange', () => {
+            if (peer.current?.connectionState === 'disconnected') {
+                console.log('Peer disconnected. Resetting…');
+                resetPeer();
+            }
+
+          });
 
             peer.current.onicecandidate = (e) => {
                 if (e.candidate) {
@@ -296,39 +317,59 @@ export default function RoomPage() {
     }, [socket, ownerId]);
 
     return (
-        <div style={{ padding: "20px" }}>
-            <h1>Room</h1>
-            <p>{status}</p>
-            {status === "Connected to room." && (
-                <>
-                    <p>Flight Code: {flightCode}</p>
-
-                    <input
-                        type="file"
-                        multiple
-                        onChange={handleFileSelect}
-                    />
-                    <br />
-                    <button onClick={sendFiles}>
-                        Send files
-                    </button>
-
-                    <ul>
-                        {transfers?.map((t, i) => (
-                            <li key={i}>
-                                {t.file.name} - {t.progress}%
-                            </li>
-                        ))}
-                    </ul>
-
-                    <h3>Logs</h3>
-                    <ul>
-                        {logs?.map((msg, i) => (<li key={i}>{msg}</li>))}
-                    </ul>
-                </>
-            )}
-
+    <div className="container mx-auto p-6 space-y-6">
+      <header className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">File Transfer Room</h1>
+          <p className="mt-1 ">Code: <span className="font-mono bg-gray-100 p-1 rounded">{flightCode}</span></p>
         </div>
-    )
-}
+        <div>
+          <span className={
+            `px-3 py-1 rounded-full text-sm font-semibold \${
+              status.includes("Connected") ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+            }`
+          }>{status}</span>
+        </div>
+      </header>
 
+      <section className=" shadow rounded p-4 space-y-4">
+        <div className="flex items-center space-x-4">
+          <input
+            type="file"
+            id="fileInput"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          <label htmlFor="fileInput" className="cursor-pointer bg-blue-600  px-4 py-2 rounded hover:bg-blue-700">
+            Choose Files
+          </label>
+          <button
+            onClick={sendFiles}
+            className="bg-green-600  px-4 py-2 rounded hover:bg-green-700"
+          >
+            Send
+          </button>
+        </div>
+        <div className="space-y-2">
+          {transfers.map((t) => (
+            <div key={t.transferId} className="p-2  rounded">
+              <div className="flex justify-between">
+                <span className="font-medium">{t.file.name}</span>
+                <span className="text-sm ">{t.progress}%</span>
+              </div>
+              <progress value={t.progress} max={100} className="w-full h-2 mt-1" />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className=" shadow rounded p-4">
+        <h2 className="text-xl font-semibold mb-2">Logs</h2>
+        <div className="h-48 overflow-y-auto  p-2 rounded font-mono text-sm">
+          {logs.map((msg, i) => <div key={i} className="mb-1">{msg}</div>)}
+        </div>
+      </section>
+    </div>
+  );
+}

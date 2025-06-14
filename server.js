@@ -79,12 +79,23 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("ice-candidate", ({ to, candidate }) => {
-        console.log(to , candidate);
-        if (io.sockets.sockets.get(to)) {
-            io.to(to).emit("ice-candidate", { from: socket.id, candidate });
+    socket.on("ice-candidate", ({ code, candidate }) => {
+        const flight = flights.get(code);
+        if (!flight) return;
+
+        if (socket.id === flight.ownerId) {
+            // Owner sending candidate to all members except self
+            const targets = flight.members.filter(id => id !== socket.id);
+            if (targets.length > 0) {
+                io.to(targets).emit("ice-candidate", { from: socket.id, candidate });
+            }
+        } else {
+            // Member sending candidate to owner
+            if (io.sockets.sockets.has(flight.ownerId)) {
+                io.to(flight.ownerId).emit("ice-candidate", { from: socket.id, candidate });
+            }
         }
-    }); 
+    });
 
     socket.on("disconnect", () => {
         for (const [code, flight] of flights.entries()) {
