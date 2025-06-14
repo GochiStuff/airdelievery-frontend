@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SocketProvider } from "@/hooks/socketContext";
+import Header from "@/components/header";
+import { Oswald } from "next/font/google";
 
-const geistSans = Geist({
+const oswald = Oswald({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
@@ -26,9 +28,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${oswald.variable} ${geistMono.variable} antialiased`}
       >
         <SocketProvider>
+          <Header/>
         {children}
         </SocketProvider>
       </body>

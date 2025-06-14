@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "express": "^5.1.0",
+    "lucide-react": "^0.515.0",
     "nanoid": "^5.1.5",
     "next": "15.3.3",
     "react": "^19.0.0",

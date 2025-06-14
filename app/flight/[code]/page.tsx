@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, ChangeEvent } from "react";
 import { useSocket } from "@/hooks/socketContext";
 import { useParams } from "next/navigation";
-
+import { Folder, File, Send } from "lucide-react";
 // Types
 type FileTransfer = { file: File; progress: number; transferId: string;};
 
@@ -14,6 +14,7 @@ export default function RoomPage() {
     const [flightCode] = useState<string>(typeof code === "string" ? code : "");
     const [status, setStatus] = useState<string>("Connecting...");
     const [members, setMembers] = useState<string[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [ownerId, setOwnerId] = useState<string>("");
 
     // WebRTC
@@ -311,60 +312,114 @@ export default function RoomPage() {
         }
     }, [socket, ownerId]);
 
-    return (
-    <div className="container mx-auto p-6 space-y-6">
-      <header className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">File Transfer Room</h1>
-          <p className="mt-1 ">Code: <span className="font-mono  p-1 rounded">{flightCode}</span></p>
-        </div>
-        <div>
-          <span className={
-            `px-3 py-1 rounded-full text-sm font-semibold \${
-              status.includes("Connected") ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-            }`
-          }>{status}</span>
-        </div>
-      </header>
+      return (
+    <main className="min-h-screen bg-zinc-50 p-4 sm:p-8 lg:p-12">
+      <div className="max-w-4xl mx-auto space-y-8">
 
-      <section className=" shadow rounded p-4 space-y-4">
-        <div className="flex items-center space-x-4">
-          <input
-            type="file"
-            id="fileInput"
-            multiple
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-          <label htmlFor="fileInput" className="cursor-pointer bg-blue-600  px-4 py-2 rounded hover:bg-blue-700">
-            Choose Files
-          </label>
-          <button
-            onClick={sendFiles}
-            className="bg-green-600  px-4 py-2 rounded hover:bg-green-700"
-          >
-            Send
-          </button>
-        </div>
-        <div className="space-y-2">
-          {transfers.map((t) => (
-            <div key={t.transferId} className="p-2  rounded">
-              <div className="flex justify-between">
-                <span className="font-medium">{t.file.name}</span>
-                <span className="text-sm ">{t.progress}%</span>
+        {/* HEADER CARD */}
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white rounded-2xl shadow-lg p-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900">File Transfer Room</h1>
+            <p className="mt-1 text-sm text-zinc-600">
+              Code:
+              <span className="ml-2 font-mono bg-zinc-100 px-2 py-1 rounded text-zinc-800">
+                {flightCode}
+              </span>
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-4 sm:mt-0">
+            <Badge color={status.includes("Connected") ? "green" : "yellow"}>
+              {status}
+            </Badge>
+            <Badge color={status.includes("Connected") ? "green" : "yellow"}>
+              {members.length} Members
+            </Badge>
+            {members.map((m, i) => (
+              <Badge key={i} color="gray" size="xs">
+                {m}
+              </Badge>
+            ))}
+          </div>
+        </header>
+
+        {/* UPLOAD & TRANSFERS CARD */}
+        <section className="bg-white rounded-2xl shadow-lg p-6 space-y-6">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <label
+              htmlFor="fileInput"
+              className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl px-5 py-3 cursor-pointer shadow transition"
+            >
+              <File size={20} /> Choose Files
+              <input
+                ref={fileInputRef}
+                id="fileInput"
+                type="file"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </label>
+            <button
+              onClick={sendFiles}
+              className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white rounded-2xl px-5 py-3 shadow transition"
+            >
+              <Send size={20} /> Send
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {transfers.map((t) => (
+              <div
+                key={t.transferId}
+                className="bg-zinc-100 rounded-xl p-4 shadow-inner"
+              >
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-zinc-800">{t.file.name}</span>
+                  <span className="text-sm text-zinc-600">{t.progress}%</span>
+                </div>
+                <progress
+                  value={t.progress}
+                  max={100}
+                  className="w-full h-2 mt-2 rounded-full overflow-hidden"
+                />
               </div>
-              <progress value={t.progress} max={100} className="w-full h-2 mt-1" />
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
 
-      <section className=" shadow rounded p-4">
-        <h2 className="text-xl font-semibold mb-2">Logs</h2>
-        <div className="h-48 overflow-y-auto  p-2 rounded font-mono text-sm">
-          {logs.map((msg, i) => <div key={i} className="mb-1">{msg}</div>)}
-        </div>
-      </section>
-    </div>
+        {/* LOGS CARD */}
+        <section className="bg-white rounded-2xl shadow-lg p-6">
+          <h2 className="text-xl font-semibold text-zinc-900 mb-4">Logs</h2>
+          <div className="h-48 overflow-y-auto bg-zinc-50 p-4 rounded-lg font-mono text-sm text-zinc-800 space-y-2">
+            {logs.map((msg, i) => (
+              <div key={i}>{msg}</div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </main>
   );
+}
+
+// Reusable Badge component
+function Badge({
+  children,
+  color = "gray",
+  size = "sm",
+}: {
+  children: React.ReactNode;
+  color: "green" | "yellow" | "gray";
+  size?: "xs" | "sm";
+}) {
+  const base = "rounded-full font-semibold";
+  const sizes = {
+    xs: "text-xs px-2 py-1",
+    sm: "text-sm px-3 py-1",
+  }[size];
+  const colors = {
+    green: "bg-green-100 text-green-800",
+    yellow: "bg-yellow-100 text-yellow-800",
+    gray: "bg-zinc-100 text-zinc-800",
+  }[color];
+  return <span className={`${base} ${sizes} ${colors}`}>{children}</span>;
 }
