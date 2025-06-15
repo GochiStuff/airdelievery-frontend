@@ -1,399 +1,108 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useRef, ChangeEvent } from "react";
-import { useSocket } from "@/hooks/socketContext";
+import React from "react";
 import { useParams } from "next/navigation";
-import { Folder, File, Send } from "lucide-react";
-// Types
-type FileTransfer = { file: File; progress: number; transferId: string;};
+import { File, Send } from "lucide-react";
+import { useSocket } from "@/hooks/socketContext";
+import { useWebRTC } from "@/hooks/useWebRTC";
+import { useFileTransfer } from "@/hooks/useFileTransfer";
 
 export default function RoomPage() {
-    const { socket } = useSocket();
-    const { code } = useParams();
+  const { code } = useParams();
+  const flight = typeof code === "string" ? code : "";
 
-    const [flightCode] = useState<string>(typeof code === "string" ? code : "");
-    const [status, setStatus] = useState<string>("Connecting...");
-    const [members, setMembers] = useState<string[]>([]);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [ownerId, setOwnerId] = useState<string>("");
+  const [logs, setLogs] = React.useState<string[]>([]);
+  const addLog = (msg: string) => setLogs(prev => [...prev, `${new Date().toISOString()} - ${msg}`]);
 
-    // WebRTC
-    const peer = useRef<RTCPeerConnection | null>(null);
-    const dataChannel = useRef<RTCDataChannel | null>(null);
-    const filesToSend = useRef<FileList | undefined>(undefined);
-    const candidateBuffer = useRef<any[]>([]);
-    const [transfers, setTransfers] = useState<FileTransfer[]>([]); // files progress
-    
-    // Logs
-    const [logs, setLogs] = useState<string[]>([]);
+  // track incoming file state on dataChannel
+  const incomingRef = React.useRef<Record<string, { buffers: ArrayBuffer[]; fileName: string; fileSize: number; received: number }>>({});
 
-    function addLog(log: string) {
-        setLogs((prev) => [...prev, `${new Date().toISOString()} - ${log}`]);
+  // handle both metadata and binary
+  const handleMessage = (event: MessageEvent) => {
+    if (typeof event.data === 'string') {
+      // metadata
+      const { transferId, fileName, fileSize } = JSON.parse(event.data);
+      incomingRef.current[transferId] = { buffers: [], fileName, fileSize, received: 0 };
+      addLog(`Receiving ${fileName}`);
+    } else {
+      // binary chunk
+      const buf = event.data as ArrayBuffer;
+      // find active transfer (only one per id)
+      for (const id in incomingRef.current) {
+        const cur = incomingRef.current[id];
+        cur.buffers.push(buf);
+        cur.received += buf.byteLength;
+        if (cur.received >= cur.fileSize) {
+          // assemble and download
+          const blob = new Blob(cur.buffers);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = cur.fileName;
+          document.body.appendChild(a);
+          a.click();
+          if (navigator.userAgent.toLowerCase().includes("firefox")) {
+                console.log("FIREFOX")
+                window.open(url);
+            }
+
+            // Clean up
+        setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          addLog(`Downloaded ${cur.fileName}`);
+          delete incomingRef.current[id];
+        }
+        break; 
+      }
     }
-    
+  };
 
-    // Handle file select
-    const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
-        filesToSend.current = e.target.files || undefined;
-    }
-    
+  const { dataChannel, status, members } = useWebRTC(flight, handleMessage, addLog);
+  const { transfers, handleFileSelect, sendFiles } = useFileTransfer(dataChannel, addLog);
 
-    // Send files
-    const sendFiles = () => {
-        if (dataChannel.current?.readyState !== "open") {
-            addLog("DataChannel not opened.");
-            return;
-        }
-        if (!filesToSend.current) {
-            addLog("No files to send.");
-            return;
-        }
-        for (const file of filesToSend.current) {
-            sendFile(file);
-        }
-    }
-    
-
-    // Send a single file
-    const sendFile = (file: File) => {
-        addLog(`Starting transfer of ${file.name}`);
-
-        const CHUNK_SIZE = 16 * 1024;
-        let offset = 0;
-
-        setTransfers((prev) => [...prev, { file, progress: 0, transferId: Math.random().toString(36) }]);
-        const transferId = Math.random().toString(36);
-        setTransfers((prev) => [...prev, { file, progress: 0, transferId }]);
-
-        const fileReader = new FileReader();
-
-        fileReader.onload = (e) => {
-            if (e.target?.result) {
-                // Send metadata first
-                dataChannel.current?.send(JSON.stringify({ transferId, fileName: file.name, fileSize: file.size }));
-
-                const arrayBuffer = e.target.result as ArrayBuffer;
-
-                let bytesSent = 0;
-
-                while (offset < arrayBuffer.byteLength) {
-                    const chunk = arrayBuffer.slice(offset, offset + CHUNK_SIZE);
-                    dataChannel.current?.send(chunk);
-                    offset += CHUNK_SIZE;
-                    bytesSent += chunk.byteLength;
-
-                    setTransfers((prev) =>
-                        prev.map((t) =>
-                            t.transferId === transferId
-                                ? { ...t, progress: Math.round((bytesSent / file.size) * 100) }
-                                : t
-                        )
-                    );
-                }
-                
-                addLog(`${file.name} successfully sent.`);
-            }
-        };
-        fileReader.onerror = (err) => {
-            addLog(`Error reading file ${file.name}: ${err}`);
-        };
-        fileReader.readAsArrayBuffer(file);
-    }
-    
-
-    // Handle messages
-    const handleMessage = (event: MessageEvent) => {
-        addLog("Received message.");
-
-        if (typeof event.data === "string") {
-            try {
-                const metadata = JSON.parse(event.data);
-                if (metadata?.fileName && metadata?.fileSize) {
-                    addLog(`Initiating reception of ${metadata.fileName}`);
-
-                    (dataChannel as any).currentFile = {
-                        fileName: metadata.fileName,
-                        fileSize: metadata.fileSize,
-                        buffers: [],
-                        received: 0,
-                    };
-                }
-            } catch (err) {
-                addLog("Non-JSON message.");
-            }
-        }
-        else if (event.data instanceof ArrayBuffer) {
-            const current = (dataChannel as any).currentFile;
-            if (current) {
-                current.buffers.push(event.data);
-                current.received += event.data.byteLength;
-
-                if (current.received >= current.fileSize) {
-                    // Combine into Blob
-                    const blob = new Blob(current.buffers);
-                    addLog(`Received complete file ${current.fileName}`);
-
-                    // Download
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = current.fileName;
-                    a.click();
-
-                    (dataChannel as any).currentFile = undefined;
-                }
-            }
-        }
-    }
-    
-
-    // Handle signaling
-    useEffect(() => {
-        if (!socket) return;
-
-        if (!flightCode) {
-            setStatus("Invalid room.");
-            return;
-        }
-        
-        socket.emit("joinFlight", flightCode, (response: { success: boolean; message?: string }) => {
-            if (response.success) {
-                setStatus("Connected to room.");
-            } else {
-                setStatus(`Failed to connect: ${response?.message || "Unknown error"}`);
-            }
-        });
-
-        socket.on("flightUsers", (payload: { ownerId: string; members: string[] }) => {
-            setOwnerId(payload.ownerId);
-            // setMembers(payload.members);
-        });
-
-        // Handle signaling messages
-        socket.on("offer", async ({  ownerId , sdp }) => {
-            addLog("Received offer.");
-
-            peer.current = new RTCPeerConnection({
-                iceServers: [{urls:'stun:stun.l.google.com:19302'}] 
-            });
-            console.log(sdp)
-
-            peer.current.ondatachannel = (event) => {
-                dataChannel.current = event.channel;
-                dataChannel.current?.addEventListener("message", handleMessage);
-            };
-            peer.current.onicecandidate = (e) => {
-                if (e.candidate) {
-                    socket.emit("ice-candidate", {  code ,candidate: e.candidate });
-                }
-            };
-
-            // set remote 
-            await peer.current.setRemoteDescription(sdp.sdp);
-
-            //create answer 
-            const answer = await peer.current.createAnswer();
-
-            // set local 
-            await peer.current.setLocalDescription(answer);
-            console.log("sending answer")
-            // send back 
-            socket.emit("answer",  code , { sdp: answer });
-        });
-
-        socket.on("answer", async ({ from , sdp }) => {
-            console.log( sdp)
-            addLog("Received answer.");
-            await peer.current?.setRemoteDescription(sdp);
-            console.log("local description set . ")
-        });
-
-        
-      socket.on("ice-candidate", async ({ candidate }) => {
-        addLog("Received ICE.");
-        if (!peer.current) return;
-
-        const ice = new RTCIceCandidate(candidate);
-        if (peer.current.remoteDescription) {
-            try {
-            await peer.current.addIceCandidate(ice);
-            addLog("Added ICE candidate immediately.");
-            } catch (e) {
-            console.error("Error adding ICE candidate:", e);
-            }
-        } else {
-            candidateBuffer.current.push(candidate);
-            addLog("Buffered ICE candidate because remoteDescription not set.");
-        }
-        });
-        if (peer.current) {
-    
-            addLog("Remote description set, flushing buffered ICE...");
-        }
-
-        // flush buffer
-        (async () => {
-            for (const cand of candidateBuffer.current) {
-                try {
-                    if (peer.current) {
-                        await peer.current.addIceCandidate(new RTCIceCandidate(cand));
-                        addLog("Flushed ICE candidate.");
-                    } else {
-                        addLog("Cannot flush ICE candidate: peer connection is null.");
-                    }
-                } catch (e) {
-                    console.error("Error flushing ICE candidate:", e);
-                }
-            }
-            candidateBuffer.current = [];
-        })();
-
-
-        return () => {
-            socket.off("flightUsers");
-            socket.off("offer");
-            socket.off("answer");
-            socket.off("ice-candidate");
-
-            peer.current?.close();
-        };
-    }, [socket]);
-
-    // If you are owner, create peer immediately
-    useEffect(() => {
-        if (socket && flightCode && socket.id && socket.id === ownerId) {
-            addLog("Creating peer as sender.");
-
-            peer.current = new RTCPeerConnection({
-                iceServers: [{urls:'stun:stun.l.google.com:19302'}] 
-            });
-
-            dataChannel.current = peer.current.createDataChannel("fileTransfer");
-            
-            console.log("Sender peer")
-
-            function resetPeer() {
-                if (peer.current) {
-                    peer.current.onicecandidate = null;
-                    peer.current.ondatachannel = null;
-                    peer.current.close();
-                    peer.current = null;
-                }
-                candidateBuffer.current = [];
-                
-
-            }
-        
-
-
-            dataChannel.current?.addEventListener("open", () => console.log("DataChannel opened."));
-
-            dataChannel.current?.addEventListener("message", handleMessage);
-            dataChannel.current?.addEventListener("error", (e) => addLog(`DataChannel Error: ${e}`));
-            peer.current?.addEventListener('connectionstatechange', () => {
-            if (peer.current?.connectionState === 'disconnected') {
-                console.log('Peer disconnected. Resetting…');
-                resetPeer();
-            }
-
-          });
-
-            peer.current.onicecandidate = (e) => {
-                if (e.candidate) {
-                    socket.emit("ice-candidate", {  code , candidate: e.candidate });
-                }
-            };
-            (async () => {
-                const offer = await peer.current?.createOffer();
-                await peer.current?.setLocalDescription(offer);
-                socket.emit("offer", code ,  { sdp: offer });
-            })();
-
-        }
-    }, [socket, ownerId]);
-
-      return (
+  return (
     <main className="min-h-screen bg-zinc-50 p-4 sm:p-8 lg:p-12">
       <div className="max-w-4xl mx-auto space-y-8">
-
-        {/* HEADER CARD */}
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white rounded-2xl shadow-lg p-6">
+        <header className="flex justify-between items-center bg-white rounded-2xl shadow p-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900">File Transfer Room</h1>
-            <p className="mt-1 text-sm text-zinc-600">
-              Code:
-              <span className="ml-2 font-mono bg-zinc-100 px-2 py-1 rounded text-zinc-800">
-                {flightCode}
-              </span>
-            </p>
+            <h1 className="text-2xl font-bold">File Transfer Room</h1>
+            <p className="text-sm">Code: <span className="font-mono bg-zinc-100 px-2 py-1 rounded">{code}</span></p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 mt-4 sm:mt-0">
-            <Badge color={status.includes("Connected") ? "green" : "yellow"}>
-              {status}
-            </Badge>
-            <Badge color={status.includes("Connected") ? "green" : "yellow"}>
-              {members.length} Members
-            </Badge>
-            {members.map((m, i) => (
-              <Badge key={i} color="gray" size="xs">
-                {m}
-              </Badge>
-            ))}
+          <div className="flex gap-2">
+            <Badge color={status.includes("Connected") ? "green" : "yellow"}>{status}</Badge>
+            <Badge color="gray">{members.length} Members</Badge>
           </div>
         </header>
 
-        {/* UPLOAD & TRANSFERS CARD */}
-        <section className="bg-white rounded-2xl shadow-lg p-6 space-y-6">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <label
-              htmlFor="fileInput"
-              className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl px-5 py-3 cursor-pointer shadow transition"
-            >
-              <File size={20} /> Choose Files
-              <input
-                ref={fileInputRef}
-                id="fileInput"
-                type="file"
-                multiple
-                onChange={handleFileSelect}
-                className="hidden"
-              />
+        <section className="bg-white rounded-2xl shadow p-6 space-y-4">
+          <div className="flex gap-4">
+            <label htmlFor="fileInput" className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl px-4 py-2 cursor-pointer">
+              <File /> Choose Files
+              <input id="fileInput" type="file" multiple className="hidden" onChange={handleFileSelect} />
             </label>
-            <button
-              onClick={sendFiles}
-              className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white rounded-2xl px-5 py-3 shadow transition"
-            >
-              <Send size={20} /> Send
+            <button onClick={sendFiles} className="bg-green-500 hover:bg-green-600 text-white rounded-xl px-4 py-2 flex items-center gap-2">
+              <Send /> Send
             </button>
           </div>
-
-          <div className="space-y-4">
-            {transfers.map((t) => (
-              <div
-                key={t.transferId}
-                className="bg-zinc-100 rounded-xl p-4 shadow-inner"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-zinc-800">{t.file.name}</span>
-                  <span className="text-sm text-zinc-600">{t.progress}%</span>
-                </div>
-                <progress
-                  value={t.progress}
-                  max={100}
-                  className="w-full h-2 mt-2 rounded-full overflow-hidden"
-                />
+          {transfers.map(t => (
+            <div key={t.transferId} className="bg-zinc-100 rounded-xl p-4">
+              <div className="flex justify-between">
+                <span>{t.file.name}</span>
+                <span>{t.progress}%</span>
               </div>
-            ))}
-          </div>
+              <progress value={t.progress} max={100} className="w-full h-2 mt-2" />
+            </div>
+          ))}
         </section>
 
-        {/* LOGS CARD */}
-        <section className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-xl font-semibold text-zinc-900 mb-4">Logs</h2>
-          <div className="h-48 overflow-y-auto bg-zinc-50 p-4 rounded-lg font-mono text-sm text-zinc-800 space-y-2">
-            {logs.map((msg, i) => (
-              <div key={i}>{msg}</div>
-            ))}
+        <section className="bg-white rounded-2xl shadow p-6">
+          <h2 className="font-semibold mb-2">Logs</h2>
+          <div className="font-mono text-sm h-40 overflow-y-auto bg-zinc-50 p-4 rounded">
+            {logs.map((l, i) => <div key={i}>{l}</div>)}
           </div>
         </section>
       </div>
@@ -401,25 +110,8 @@ export default function RoomPage() {
   );
 }
 
-// Reusable Badge component
-function Badge({
-  children,
-  color = "gray",
-  size = "sm",
-}: {
-  children: React.ReactNode;
-  color: "green" | "yellow" | "gray";
-  size?: "xs" | "sm";
-}) {
-  const base = "rounded-full font-semibold";
-  const sizes = {
-    xs: "text-xs px-2 py-1",
-    sm: "text-sm px-3 py-1",
-  }[size];
-  const colors = {
-    green: "bg-green-100 text-green-800",
-    yellow: "bg-yellow-100 text-yellow-800",
-    gray: "bg-zinc-100 text-zinc-800",
-  }[color];
-  return <span className={`${base} ${sizes} ${colors}`}>{children}</span>;
+function Badge({ children, color }: { children: React.ReactNode; color: "green" | "yellow" | "gray" }) {
+  const base = "rounded-full font-semibold text-sm px-3 py-1";
+  const colors = { green: "bg-green-100 text-green-800", yellow: "bg-yellow-100 text-yellow-800", gray: "bg-zinc-100 text-zinc-800" };
+  return <span className={`${base} ${colors[color]}`}>{children}</span>;
 }

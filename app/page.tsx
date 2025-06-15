@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSocket } from "@/hooks/socketContext";
 import { useRouter } from "next/navigation";
+import AboutCard from "@/components/aboutCard";
 
 export default function MainPage() {
     const router = useRouter();
@@ -122,16 +123,7 @@ export default function MainPage() {
             <div className="   bg-zinc-900 bg-opacity-90 rounded-2xl shadow-2xl flex flex-col p-6 text-zinc-50">
                 {/* Info button */}
                 <div className="flex justify-end">
-                    <button
-                        className="text-white hover:text-orange-400 transition"
-                        title="More info"
-                    >
-                        <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                            <rect x="11" y="10" width="2" height="6" rx="1" fill="currentColor"/>
-                            <rect x="11" y="7" width="2" height="2" rx="1" fill="currentColor"/>
-                        </svg>
-                    </button>
+                    <AboutCard/>
                 </div>
                 <h2 className="text-3xl font-bold mb-2">Awesome</h2>
                 <div className="text-lg text-zinc-100 mb-8 mr-20">
@@ -141,7 +133,7 @@ export default function MainPage() {
                 <div className="flex justify-end space-x-4 mt-auto">
                     {/* GitHub */}
                     <a
-                        href="https://github.com/"
+                        href=""
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-zinc-100 hover:text-orange-400 transition"
@@ -153,7 +145,7 @@ export default function MainPage() {
                     </a>
                     {/* X (Twitter) */}
                     <a
-                        href="https://x.com/"
+                        href="https://x.com/gochistuff"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-zinc-100 hover:text-orange-400 transition"

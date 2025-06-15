@@ -49,10 +49,11 @@ io.on("connection", (socket) => {
     socket.on("joinFlight", (code , callback) => {
         if (flights.has(code)) {
             const flight = flights.get(code);
+
             socket.join(code);
             if(flight.ownerId !== socket.id){
                 flight.members.push(socket.id);
-                socket.emit("offer" , {sdp: flight.sdp});
+                socket.emit("offer" , flight.ownerId ,  {sdp: flight.sdp});
             }
             
             callback({success: true});  
@@ -67,9 +68,7 @@ io.on("connection", (socket) => {
             console.error(`No flight found for code: ${code}`);
             return;
         }
-        console.log(sdp);
         flight.sdp = sdp; 
-        console.log(`SDP updated for flight ${code}:`, flights.get(code));
 
     });
     socket.on("answer", (code, { sdp }) => {
@@ -79,21 +78,9 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("ice-candidate", ({ code, candidate }) => {
-        const flight = flights.get(code);
-        if (!flight) return;
-
-        if (socket.id === flight.ownerId) {
-            // Owner sending candidate to all members except self
-            const targets = flight.members.filter(id => id !== socket.id);
-            if (targets.length > 0) {
-                io.to(targets).emit("ice-candidate", { from: socket.id, candidate });
-            }
-        } else {
-            // Member sending candidate to owner
-            if (io.sockets.sockets.has(flight.ownerId)) {
-                io.to(flight.ownerId).emit("ice-candidate", { from: socket.id, candidate });
-            }
+    socket.on("ice-candidate", (payload) => {
+        if (payload && payload.id && payload.candidate) {
+            io.to(payload.id).emit("ice-candidate", { from: socket.id, candidate: payload.candidate });
         }
     });
 
