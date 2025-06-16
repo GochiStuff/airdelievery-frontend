@@ -33,7 +33,7 @@ export default function RoomPage() {
               </h1>
             </div>
             <div className="flex items-center gap-3 mt-1">
-              <Badge color={typeof status === "string" && status.includes("Connected") ? "green" : "yellow"}>{status}</Badge>
+              <Badge color={typeof status === "string" && status.includes("Connection") ? "green" : "yellow"}>{status}</Badge>
               <Badge color="gray">{members.length } Member{members.length ? "s" : ""}</Badge>
             </div>
          

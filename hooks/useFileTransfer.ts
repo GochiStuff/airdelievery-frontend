@@ -21,26 +21,6 @@ type Meta = {
   speedBps: number;
 };
 
-
-type InMemRec = {
-  buffers: Uint8Array[];
-  received: number;
-  expected: number;
-  path: string;
-};
-
-
-type StreamRec = {
-  writer: WritableStreamDefaultWriter;
-  bufferQueue: Uint8Array[];
-  bufferedBytes: number;
-  received: number;
-  expected: number;
-};
-
-const inMemStore   = new Map<string, InMemRec>();
-const streamStore  = new Map<string, StreamRec>();
-
 export function useFileTransfer(
   dataChannel: RTCDataChannel | null,
   addLog: (msg: string) => void
@@ -52,17 +32,11 @@ export function useFileTransfer(
     speedBps: 0,
   });
 
-  const peerMax         = (dataChannel as any)?.maxMessageSize || 256*1024; 
-  const CHUNK_SIZE      = Math.min(512*1024, peerMax - 1024);
-  const BUFFER_THRESHOLD = CHUNK_SIZE * 16;       // ~8 MB
-  const PROGRESS_INTERVAL_MS = 500;             // 500ms
+  const peerMax = (dataChannel as any)?.maxMessageSize || 256 * 1024;
+  const CHUNK_SIZE = Math.min(512 * 1024, peerMax - 1024);
+  const BUFFER_THRESHOLD = CHUNK_SIZE * 16;
+  const PROGRESS_INTERVAL_MS = 500;
 
-  const MAX_IN_MEMORY      = 0.5 * 1024 * 1024 * 1024; // 0.5 GB RAM cap
-  const STREAM_BATCH_SIZE  = 2 * 1024 * 1024;   // 4 MB per disk write batch
-  const STREAM_BUFFER      = 128 * 1024 * 1024;  //128 MB highWaterMark
-
-
-  // Active incoming transfers
   const incoming = useRef<
     Record<
       string,
@@ -70,10 +44,16 @@ export function useFileTransfer(
     >
   >({});
 
-  // One send at a time
   const pq = useRef(new PQueue({ concurrency: 1 }));
 
-  // Enqueue selected files/folders
+
+  const statusMap: Record<Transfer["status"], string> = {
+    queued: "Waiting to send",
+    sending: "Transferring",
+    done: "Completed",
+    error: "Failed",
+  };
+
   async function handleFileSelect(e: ChangeEvent<HTMLInputElement>) {
     if (!e.target.files) return;
     const files = await flattenFileList(e.target.files);
@@ -87,35 +67,43 @@ export function useFileTransfer(
           directoryPath: (file as any).webkitRelativePath || file.name,
           progress: 0,
           speedBps: 0,
-          status: 'queued' as const,
+          status: "queued" as const,
         }));
       return [...prev, ...newTransfers];
     });
   }
 
-  // Setup receiver
   useEffect(() => {
     if (!dataChannel) return;
-    dataChannel.binaryType = 'arraybuffer';
+    dataChannel.binaryType = "arraybuffer";
     dataChannel.bufferedAmountLowThreshold = BUFFER_THRESHOLD;
     dataChannel.onmessage = handleMessage;
-    addLog('⚙️ Receiver initialized (binaryType=arraybuffer)');
+    addLog("⚙️ Receiver initialized (binaryType=arraybuffer)");
   }, [dataChannel]);
 
-  // Start sending queued files
   useEffect(() => {
-    if (dataChannel?.readyState !== 'open') return;
+    if (dataChannel?.readyState !== "open") return;
     queue.forEach(t => {
-      if (t.status !== 'queued') return;
-      setQueue(q => q.map(x =>
-        x.transferId === t.transferId ? { ...x, status: 'sending' } : x
-      ));
-      pq.current.add(() => pRetry(() => sendFile(t), { retries: 2 }))
-        .catch(err => addLog(`❌ ${t.directoryPath} failed: ${err}`));
+      if (t.status !== "queued") return;
+      setQueue(q =>
+        q.map(x =>
+          x.transferId === t.transferId ? { ...x, status: "sending" } : x
+        )
+      );
+      pq.current
+        .add(() => pRetry(() => sendFile(t), { retries: 2 }))
+        .catch(err =>
+          setQueue(q =>
+            q.map(x =>
+              x.transferId === t.transferId
+                ? { ...x, status: "error" }
+                : x
+            )
+          )
+        );
     });
   }, [queue, dataChannel]);
 
-  // Read file as stream of Uint8Array chunks
   async function* readFileInChunks(file: File) {
     const reader = file.stream().getReader();
     let buffer = new Uint8Array(0);
@@ -131,7 +119,6 @@ export function useFileTransfer(
     if (buffer.length) yield buffer;
   }
 
-  // Helper to concat two Uint8Arrays
   function concat(a: Uint8Array, b: Uint8Array) {
     const c = new Uint8Array(a.length + b.length);
     c.set(a, 0);
@@ -139,13 +126,9 @@ export function useFileTransfer(
     return c;
   }
 
-  let isPaused = false;
-
-
-  // Send file via dataChannel
   async function sendFile({ file, transferId, directoryPath }: Transfer) {
-    if (dataChannel!.readyState !== 'open')
-      throw new Error(`Channel state ${dataChannel!.readyState}`);
+    if (dataChannel!.readyState !== "open")
+      throw new Error(`Connection is not open`);
 
     const total = file.size;
     let sent = 0;
@@ -154,30 +137,20 @@ export function useFileTransfer(
 
     addLog(`🚀 Sending ${directoryPath}`);
 
-    // Send init JSON
-    dataChannel!.send(JSON.stringify({ type: 'init', transferId, directoryPath, size: total }));
+    dataChannel!.send(
+      JSON.stringify({ type: "init", transferId, directoryPath, size: total })
+    );
 
-    // Stream chunks
     for await (const chunk of readFileInChunks(file)) {
-      // Wait if buffer too large
       if (dataChannel!.bufferedAmount > BUFFER_THRESHOLD) {
-        if (!isPaused) {
-          isPaused = true;
-          addLog("⏳ Paused sending—waiting for buffer to drain…");
-        }
-        
         await new Promise<void>(res => {
+          addLog("⏳ Waiting for network...");
           dataChannel!.bufferedAmountLowThreshold = BUFFER_THRESHOLD;
           dataChannel!.onbufferedamountlow = () => res();
         });
-
-            isPaused = false;
-        addLog("▶️ Buffer drained—resuming send");
       }
-
-      // Check channel open
-      if (dataChannel!.readyState !== 'open')
-        throw new Error('DataChannel closed');
+      if (dataChannel!.readyState !== "open")
+        throw new Error("Connection closed");
 
       dataChannel!.send(chunk.buffer);
       sent += chunk.length;
@@ -188,133 +161,101 @@ export function useFileTransfer(
         now - lastTime > PROGRESS_INTERVAL_MS ||
         pct - (lastSent / total) * 100 >= 5
       ) {
-        // Throttled updates
-        setQueue(q => q.map(x =>
-          x.transferId === transferId ? { ...x, progress: Math.round(pct) } : x
-        ));
-        const speed = Math.round(sent / ((now - lastTime) / 1000));
+        setQueue(q =>
+          q.map(x =>
+            x.transferId === transferId
+              ? { ...x, progress: Math.round(pct) }
+              : x
+          )
+        );
+        const bytesSinceLast = sent - lastSent;
+        const timeElapsedSec = (now - lastTime) / 1000;
+        const speed = timeElapsedSec > 0 ? Math.round(bytesSinceLast / timeElapsedSec) : 0;
         setMeta(m => ({ ...m, speedBps: speed }));
         lastTime = now;
         lastSent = sent;
       }
     }
 
-    // Finalize
-    setQueue(q => q.map(x =>
-      x.transferId === transferId ? { ...x, progress: 100, status: 'done' } : x
-    ));
+    setQueue(q =>
+      q.map(x =>
+        x.transferId === transferId
+          ? { ...x, progress: 100, status: "done" }
+          : x
+      )
+    );
     setMeta(m => ({ ...m, totalSent: m.totalSent + total }));
     addLog(`✅ Completed ${directoryPath}`);
   }
+const writeBufferSize = 512 * 1024; 
+let writeBuffer: Uint8Array[] = [];
 
-  // Handle incoming data
-  function handleMessage(event: MessageEvent) {
-  // 1) INIT
-  if (typeof event.data === 'string') {
+let writeBufferLength = 0;
+let flushTimeout: NodeJS.Timeout | null = null;
+
+function flushBuffer(writer: WritableStreamDefaultWriter) {
+  const all = new Uint8Array(writeBufferLength);
+  let offset = 0;
+  for (const chunk of writeBuffer) {
+    all.set(chunk, offset);
+    offset += chunk.length;
+  }
+  writer.write(all);
+  writeBuffer = [];
+  writeBufferLength = 0;
+  flushTimeout = null;
+}
+
+function handleMessage(event: MessageEvent) {
+  if (typeof event.data === "string") {
     const msg = JSON.parse(event.data);
-    if (msg.type === 'init') {
+    if (msg.type === "init") {
       const { transferId, directoryPath, size } = msg;
-      
-      if (size <= MAX_IN_MEMORY) {
-        // small file: buffer in RAM
-        inMemStore.set(transferId, {
-          buffers: [], received: 0, expected: size, path: directoryPath
-        });
-        addLog(`📥 Init in‑RAM receive ${directoryPath} (${size} B)`);
-      } else {
-        // large file: streamed writes
-        const stream = streamSaver.createWriteStream(directoryPath, {
-          size,
-          writableStrategy: { highWaterMark: STREAM_BUFFER }
-        });
-        const writer = stream.getWriter();
-        streamStore.set(transferId, {
-          writer,
-          bufferQueue: [],
-          bufferedBytes: 0,
-          received: 0,
-          expected: size
-        });
-        addLog(`📥 Init streaming receive ${directoryPath} (${size} B)`);
-      }
+      const stream = streamSaver.createWriteStream(directoryPath, { size });
+      incoming.current[transferId] = {
+        writer: stream.getWriter(),
+        size,
+        received: 0,
+      };
+      addLog(`📥 Preparing to receive ${directoryPath}`);
     }
     return;
   }
 
-  // 2) CHUNK
-  const buf = new Uint8Array(event.data as ArrayBuffer);
+  const buf = new Uint8Array(event.data);
+  const transferIds = Object.keys(incoming.current);
+  if (!transferIds.length) return;
+  const transferId = transferIds[0];
+  const rec = incoming.current[transferId];
 
-  // Prefer in‑RAM, else streaming
-  const tid = [...inMemStore.keys(), ...streamStore.keys()][0];
-  if (!tid) return;  // no active transfer
+  writeBuffer.push(buf);
+  writeBufferLength += buf.length;
 
-  // — In‑RAM path —
-  if (inMemStore.has(tid)) {
-    const rec = inMemStore.get(tid)!;
-    rec.buffers.push(buf);
-    rec.received += buf.byteLength;
-    setMeta(m => ({ ...m, totalReceived: m.totalReceived + buf.byteLength }));
-    addLog(`🔹 Buffered ${rec.received}/${rec.expected} B in RAM`);
+  rec.received += buf.length;
+  setMeta(m => ({ ...m, totalReceived: m.totalReceived + buf.length }));
 
-    if (rec.received >= rec.expected) {
-      // flush entire buffer
-      const full = new Uint8Array(rec.expected);
-      let off = 0;
-      for (const part of rec.buffers) {
-        full.set(part, off);
-        off += part.byteLength;
-      }
-      const ws = streamSaver.createWriteStream(rec.path, { size: rec.expected });
-      const w = ws.getWriter();
-      w.write(full);
-      w.close();
-      inMemStore.delete(tid);
-      addLog(`✅ Flushed from RAM to disk: ${rec.path}`);
-    }
-    return;
+  // Batch write
+  if (writeBufferLength >= writeBufferSize) {
+    flushBuffer(rec.writer);
+  } else if (!flushTimeout) {
+    flushTimeout = setTimeout(() => flushBuffer(rec.writer), 20); // flush soon
   }
 
-  // — Streaming path —
-  if (streamStore.has(tid)) {
-    const rec = streamStore.get(tid)!;
-    rec.bufferQueue.push(buf);
-    rec.bufferedBytes += buf.byteLength;
-    rec.received    += buf.byteLength;
-    setMeta(m => ({ ...m, totalReceived: m.totalReceived + buf.byteLength }));
-
-    // batch-write when enough queued
-    if (rec.bufferedBytes >= STREAM_BATCH_SIZE) {
-      const toWrite = new Uint8Array(rec.bufferedBytes);
-      let off = 0;
-      for (const part of rec.bufferQueue) {
-        toWrite.set(part, off);
-        off += part.byteLength;
-      }
-      rec.writer.write(toWrite);
-      rec.bufferQueue  = [];
-      rec.bufferedBytes = 0;
-      addLog(`✏️ Wrote 512 KB batch to disk`);
+  if (rec.received >= rec.size) {
+    if (writeBufferLength > 0) {
+      flushBuffer(rec.writer);
     }
-
-    // on complete, flush remainder & close
-    if (rec.received >= rec.expected) {
-      if (rec.bufferedBytes > 0) {
-        const rem = new Uint8Array(rec.bufferedBytes);
-        let o = 0;
-        for (const p of rec.bufferQueue) {
-          rem.set(p, o);
-          o += p.byteLength;
-        }
-        rec.writer.write(rem);
-      }
-      rec.writer.close();
-      streamStore.delete(tid);
-      addLog(`✅ Streaming receive complete`);
-    }
-    return;
+    rec.writer.close();
+    delete incoming.current[transferId];
+    addLog(`✅ File received`);
   }
 }
 
 
-  return { queue, meta, handleFileSelect, handleMessage };
+  const userQueue = queue.map(t => ({
+    ...t,
+    userStatus: statusMap[t.status],
+  }));
+
+  return { queue: userQueue, meta, handleFileSelect, handleMessage };
 }

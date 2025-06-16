@@ -3,6 +3,20 @@ import { useSocket } from "@/hooks/socketContext";
 
 type Candidate = RTCIceCandidateInit;
 
+function userMessage(msg: string) {
+  // Map technical messages to user-friendly ones
+  if (msg.includes("DataChannel opened")) return "Connection established. Ready to transfer files.";
+  if (msg.includes("Offer sent")) return "Connecting to the other device...";
+  if (msg.includes("Answer sent")) return "Connected to the other device.";
+  if (msg.includes("Remote description set")) return "Connection secured.";
+  if (msg.includes("Added ICE candidate")) return "Connection improved.";
+  if (msg.includes("Buffered ICE candidate")) return "Setting up connection...";
+  if (msg.includes("Joined signaling")) return "Joined the room. Waiting for others...";
+  if (msg.includes("Failed to join")) return "Could not join the room. Please check the code.";
+  if (msg.includes("Invalid room code")) return "Please enter a valid room code.";
+   return msg;
+}
+
 export function useWebRTC(
   code: string,
   onMessage: (e: MessageEvent) => void,
@@ -20,8 +34,9 @@ export function useWebRTC(
   const queuedCandidates = useRef<RTCIceCandidateInit[]>([]);
 
   function log(msg: string) {
-    addLog(msg);
-    setStatus(msg);
+    const friendly = userMessage(msg);
+    addLog(friendly);
+    setStatus(friendly);
   }
 
   function createPeer(id: string) {
@@ -58,7 +73,10 @@ export function useWebRTC(
   async function initiateSender(id: string) {
     if (!peer.current) return;
 
-    dataChannel.current = peer.current.createDataChannel("fileTransfer");
+    dataChannel.current = peer.current.createDataChannel("fileTransfer" , {
+        ordered: false,
+  maxRetransmits: 0,
+    });
 
     dataChannel.current.onopen = () => log("DataChannel opened.");
     dataChannel.current.onmessage = onMessage;
