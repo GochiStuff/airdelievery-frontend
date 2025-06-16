@@ -1,9 +1,8 @@
 "use client"
 import React, { useState } from "react";
 import { useParams } from "next/navigation";
-import { File, Send, Folder, Share2, Users, User, Heart } from "lucide-react";
+import { File, Folder, Share2, Users, User, Heart } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { useSocket } from "@/hooks/socketContext";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useFileTransfer } from "@/hooks/useFileTransfer";
 
