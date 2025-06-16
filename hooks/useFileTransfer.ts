@@ -21,9 +21,25 @@ type Meta = {
   speedBps: number;
 };
 
-const CHUNK_SIZE = 256 * 1024;        // 256 KB optimal
-const BUFFER_THRESHOLD = 8 * 1024 * 1024; // 8 MB
-const PROGRESS_INTERVAL_MS = 500;      // 500 ms updates
+
+type InMemRec = {
+  buffers: Uint8Array[];
+  received: number;
+  expected: number;
+  path: string;
+};
+
+
+type StreamRec = {
+  writer: WritableStreamDefaultWriter;
+  bufferQueue: Uint8Array[];
+  bufferedBytes: number;
+  received: number;
+  expected: number;
+};
+
+const inMemStore   = new Map<string, InMemRec>();
+const streamStore  = new Map<string, StreamRec>();
 
 export function useFileTransfer(
   dataChannel: RTCDataChannel | null,
@@ -35,6 +51,16 @@ export function useFileTransfer(
     totalReceived: 0,
     speedBps: 0,
   });
+
+  const peerMax         = (dataChannel as any)?.maxMessageSize || 256*1024; 
+  const CHUNK_SIZE      = Math.min(512*1024, peerMax - 1024);
+  const BUFFER_THRESHOLD = CHUNK_SIZE * 16;       // ~8 MB
+  const PROGRESS_INTERVAL_MS = 500;             // 500ms
+
+  const MAX_IN_MEMORY      = 0.5 * 1024 * 1024 * 1024; // 0.5 GB RAM cap
+  const STREAM_BATCH_SIZE  = 2 * 1024 * 1024;   // 4 MB per disk write batch
+  const STREAM_BUFFER      = 128 * 1024 * 1024;  //128 MB highWaterMark
+
 
   // Active incoming transfers
   const incoming = useRef<
@@ -113,6 +139,9 @@ export function useFileTransfer(
     return c;
   }
 
+  let isPaused = false;
+
+
   // Send file via dataChannel
   async function sendFile({ file, transferId, directoryPath }: Transfer) {
     if (dataChannel!.readyState !== 'open')
@@ -132,11 +161,18 @@ export function useFileTransfer(
     for await (const chunk of readFileInChunks(file)) {
       // Wait if buffer too large
       if (dataChannel!.bufferedAmount > BUFFER_THRESHOLD) {
+        if (!isPaused) {
+          isPaused = true;
+          addLog("⏳ Paused sending—waiting for buffer to drain…");
+        }
+        
         await new Promise<void>(res => {
-          addLog('⏳ Waiting for buffer drain...');
           dataChannel!.bufferedAmountLowThreshold = BUFFER_THRESHOLD;
           dataChannel!.onbufferedamountlow = () => res();
         });
+
+            isPaused = false;
+        addLog("▶️ Buffer drained—resuming send");
       }
 
       // Check channel open
@@ -173,34 +209,112 @@ export function useFileTransfer(
 
   // Handle incoming data
   function handleMessage(event: MessageEvent) {
-    if (typeof event.data === 'string') {
-      const msg = JSON.parse(event.data);
-      if (msg.type === 'init') {
-        const { transferId, directoryPath, size } = msg;
-        const stream = streamSaver.createWriteStream(directoryPath, { size });
-        incoming.current[transferId] = { writer: stream.getWriter(), size, received: 0 };
-        addLog(`📥 Init receive ${directoryPath}`);
+  // 1) INIT
+  if (typeof event.data === 'string') {
+    const msg = JSON.parse(event.data);
+    if (msg.type === 'init') {
+      const { transferId, directoryPath, size } = msg;
+      
+      if (size <= MAX_IN_MEMORY) {
+        // small file: buffer in RAM
+        inMemStore.set(transferId, {
+          buffers: [], received: 0, expected: size, path: directoryPath
+        });
+        addLog(`📥 Init in‑RAM receive ${directoryPath} (${size} B)`);
+      } else {
+        // large file: streamed writes
+        const stream = streamSaver.createWriteStream(directoryPath, {
+          size,
+          writableStrategy: { highWaterMark: STREAM_BUFFER }
+        });
+        const writer = stream.getWriter();
+        streamStore.set(transferId, {
+          writer,
+          bufferQueue: [],
+          bufferedBytes: 0,
+          received: 0,
+          expected: size
+        });
+        addLog(`📥 Init streaming receive ${directoryPath} (${size} B)`);
       }
-      return;
     }
+    return;
+  }
 
-    // Pure chunk path
-    const buf = event.data as ArrayBuffer;
-    const transferIds = Object.keys(incoming.current);
-    if (!transferIds.length) return;
-    const transferId = transferIds[0];
-    const rec = incoming.current[transferId];
+  // 2) CHUNK
+  const buf = new Uint8Array(event.data as ArrayBuffer);
 
-    rec.writer.write(new Uint8Array(buf));
+  // Prefer in‑RAM, else streaming
+  const tid = [...inMemStore.keys(), ...streamStore.keys()][0];
+  if (!tid) return;  // no active transfer
+
+  // — In‑RAM path —
+  if (inMemStore.has(tid)) {
+    const rec = inMemStore.get(tid)!;
+    rec.buffers.push(buf);
     rec.received += buf.byteLength;
     setMeta(m => ({ ...m, totalReceived: m.totalReceived + buf.byteLength }));
+    addLog(`🔹 Buffered ${rec.received}/${rec.expected} B in RAM`);
 
-    if (rec.received >= rec.size) {
-      rec.writer.close();
-      delete incoming.current[transferId];
-      addLog(`✅ Received complete`);
+    if (rec.received >= rec.expected) {
+      // flush entire buffer
+      const full = new Uint8Array(rec.expected);
+      let off = 0;
+      for (const part of rec.buffers) {
+        full.set(part, off);
+        off += part.byteLength;
+      }
+      const ws = streamSaver.createWriteStream(rec.path, { size: rec.expected });
+      const w = ws.getWriter();
+      w.write(full);
+      w.close();
+      inMemStore.delete(tid);
+      addLog(`✅ Flushed from RAM to disk: ${rec.path}`);
     }
+    return;
   }
+
+  // — Streaming path —
+  if (streamStore.has(tid)) {
+    const rec = streamStore.get(tid)!;
+    rec.bufferQueue.push(buf);
+    rec.bufferedBytes += buf.byteLength;
+    rec.received    += buf.byteLength;
+    setMeta(m => ({ ...m, totalReceived: m.totalReceived + buf.byteLength }));
+
+    // batch-write when enough queued
+    if (rec.bufferedBytes >= STREAM_BATCH_SIZE) {
+      const toWrite = new Uint8Array(rec.bufferedBytes);
+      let off = 0;
+      for (const part of rec.bufferQueue) {
+        toWrite.set(part, off);
+        off += part.byteLength;
+      }
+      rec.writer.write(toWrite);
+      rec.bufferQueue  = [];
+      rec.bufferedBytes = 0;
+      addLog(`✏️ Wrote 512 KB batch to disk`);
+    }
+
+    // on complete, flush remainder & close
+    if (rec.received >= rec.expected) {
+      if (rec.bufferedBytes > 0) {
+        const rem = new Uint8Array(rec.bufferedBytes);
+        let o = 0;
+        for (const p of rec.bufferQueue) {
+          rem.set(p, o);
+          o += p.byteLength;
+        }
+        rec.writer.write(rem);
+      }
+      rec.writer.close();
+      streamStore.delete(tid);
+      addLog(`✅ Streaming receive complete`);
+    }
+    return;
+  }
+}
+
 
   return { queue, meta, handleFileSelect, handleMessage };
 }

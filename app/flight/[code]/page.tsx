@@ -201,12 +201,12 @@ export default function RoomPage() {
               <Metric label="Sent" value={`${(fileTrans.meta.totalSent / 1e9).toFixed(2)} GB`} />
               <Metric label="Received" value={`${(fileTrans.meta.totalReceived / 1e9).toFixed(2)} GB`} />
               <Metric
-              label="Speed"
-              value={
-                fileTrans.meta.speedBps >= 1048576
-                ? `${(fileTrans.meta.speedBps / 1048576).toFixed(2)} MB/s`
-                : `${(fileTrans.meta.speedBps / 1024).toFixed(2)} KB/s`
-              }
+                label="Speed"
+                value={
+                  fileTrans.meta.speedBps >= 1048576
+                    ? `${(fileTrans.meta.speedBps / 1048576).toFixed(2)} MB/s`
+                    : `${(fileTrans.meta.speedBps / 1024).toFixed(2)} KB/s`
+                }
               />
             
             </div>
