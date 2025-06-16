@@ -42,51 +42,43 @@ export default function AboutCard() {
             <button
                 aria-label="About Airway"
                 onClick={() => setOpen(true)}
-                className=" hover:text-orange-500 text-zinc-100 rounded-full "
+                className="hover:text-orange-500 text-zinc-100 rounded-full transition-colors"
             >
-               <InfoIcon/>
+                <InfoIcon />
             </button>
 
             {/* Modal Card */}
-            {open && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        width: "100vw",
-                        height: "100vh",
-                        background: "rgba(0,0,0,0.3)",
-                        zIndex: 1000,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                    onClick={() => setOpen(false)}
-                >
-                    <div
-                        className="bg-white rounded-xl max-w-2xl p-8 shadow-lg relative"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <button
-                            aria-label="Close"
-                            onClick={() => setOpen(false)}
-                            className="absolute top-3 right-3 bg-transparent border-none text-2xl cursor-pointer text-zinc-400 hover:text-zinc-600"
-                        >
-                            &times;
-                        </button>
-                        <h2 className="mt-0 mb-4 text-2xl font-semibold tracking-tighter text-zinc-900">Air Delivery</h2>
-                        <div className="text-base text-zinc-800">
-                            {aboutInfo.map((section) => (
-                                <div key={section.title} className="mb-5">
-                                    <strong className="block">{section.title}</strong>
-                                    <div className="mt-1">{section.content}</div>
+           {open && (
+                            <div
+                                className="fixed inset-0 z-100 flex items-start justify-center bg-black/30 overflow-auto"
+                                style={{ paddingTop: "env(safe-area-inset-top, 24px)" }}
+                                onClick={() => setOpen(false)}
+                            >
+                                <div
+                                    className="bg-white rounded-xl max-w-2xl w-full p-8 shadow-lg relative mt-6 mx-2"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <button
+                                        aria-label="Close"
+                                        onClick={() => setOpen(false)}
+                                        className="absolute top-3 right-3 bg-transparent border-none text-2xl cursor-pointer text-zinc-400 hover:text-zinc-600"
+                                    >
+                                        &times;
+                                    </button>
+                                    <h2 className="mt-0 mb-4 text-2xl font-semibold tracking-tighter text-zinc-900">
+                                        Air Delivery
+                                    </h2>
+                                    <div className="text-base text-zinc-800">
+                                        {aboutInfo.map((section) => (
+                                            <div key={section.title} className="mb-5">
+                                                <strong className="block">{section.title}</strong>
+                                                <div className="mt-1">{section.content}</div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
+                            </div>
+                        )}
         </div>
     );
 }

@@ -27,16 +27,19 @@ export default function MainPage() {
 
     return(
         <div
-            className="relative flex items-center max-w-9xl mx-auto  justify-around min-h-screen overflow-hidden"
+            className="relative flex  mb-10 flex-col md:flex-row items-center max-w-9xl mx-auto  justify-around min-h-screen overflow-hidden"
         >
 
             {/* Tagline background */}
-            <h1 className=" text-8xl font-extrabold  drop-shadow-2xl select-none">
-                FAST. <br />PRIVATE. <br /> NO LIMIT.
-            </h1>
+                <div className="relative w-full md:w-auto">
+                    <h1 className="text-6xl mt-15 md:mt-0 md:text-8xl font-extrabold drop-shadow-2xl select-none text-center md:text-left mb-8 md:mb-0 relative">
+                        FAST. <br className="block" />PRIVATE. <br className="block" /> NO LIMIT.
+                
+                    </h1>
+                </div>
 
 {/* section 2 */}
-            <div className="flex flex-col gap-10 w-84">
+            <div className=" flex flex-col gap-10 max-w-84">
 
          
         <div className="relative flex flex-col items-center  pt-24 rounded-3xl shadow-2xl text-zinc-900 bg-orange-600 min-h-[480px] w-full max-w-md transition-all overflow-hidden ticket-border">
@@ -75,7 +78,7 @@ export default function MainPage() {
                 </label>
             </div>
 
-            <p className="text-xs text-zinc-50 mb-0 tracking-widest uppercase font-mono">
+            <p className="text-xs text-zinc-50 mb-0 tracking-tight uppercase font-mono">
                 Select files or folder to send
             </p>
 
@@ -114,7 +117,7 @@ export default function MainPage() {
                 </button>
             </div>
 
-            <p className="text-xs text-zinc-50 tracking-widest uppercase font-mono mb-4">
+            <p className="text-xs text-zinc-50 tracking-tight uppercase font-mono mb-4">
                 Enter your flight code to receive
             </p>
 
