@@ -331,7 +331,7 @@ function QueueTray(prop: QueueTrayProp) {
                 </div>
 
                 <span className="text-sm font-medium text-zinc-800 text-center truncate max-w-[180px]">
-                  {item.file?.name || item.name}
+                  {item.file?.name || item.name || item.directoryPath}
                 </span>
 
                 {/* Progress Bar */}
