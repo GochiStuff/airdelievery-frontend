@@ -1,7 +1,7 @@
 "use client"
 import React, { useState } from "react";
 import { useParams } from "next/navigation";
-import { File, Folder, Share2, Users, User, Heart } from "lucide-react";
+import { File, Folder, Share2, Users, User, Heart, X, Play, Pause } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useFileTransfer } from "@/hooks/useFileTransfer";
@@ -16,7 +16,7 @@ export default function RoomPage() {
   const addLog = React.useCallback((msg: string) => {
     setLogs(prev => [...prev, `${new Date().toISOString()} - ${msg}`]);
   }, []);
-  const { dataChannel, status, members } = useWebRTC(flight, e => fileTrans.handleMessage(e), addLog);
+  const { dataChannel, status, members  , } = useWebRTC(flight, e => fileTrans.handleMessage(e), addLog);
   const fileTrans = useFileTransfer(dataChannel, addLog);
 
   return (
@@ -183,12 +183,21 @@ export default function RoomPage() {
         </section>
 
          {/* Right: Sending Queue Preview */}
-          <div className="flex flex-col md:flex-row gap-6">
+          <div className="flex flex-col gap-6">
             <div className="flex-1">
-              <QueueTray title="Sending Queue" items={fileTrans.queue} />
+              <QueueTray title="Sending Queue" items={fileTrans.queue} 
+              pauseTransfer={fileTrans.pauseTransfer}
+              resumeTransfer={fileTrans.resumeTransfer}
+              cancelTransfer={fileTrans.cancelTransfer}
+              reciver = {false}
+              />
             </div>
             <div className="flex-1">
-              <QueueTray title="Receiving Queue" items={ []} />
+                  <QueueTray title="Reciever Queue" items={fileTrans.recvQueue} 
+
+              cancelTransfer={fileTrans.cancelTransfer}
+              reciver = {true}
+              />
             </div>
           </div>
 
@@ -277,40 +286,124 @@ function Card({ title, icon, children }: { title: string; icon: React.ReactNode;
     </div>
   );
 }
+interface QueueTrayProp {
+  title: string;
+  items: any[];
+  reciver ?: boolean;
+  pauseTransfer ?: any;
+  resumeTransfer ?: any;
+  cancelTransfer ?: any;
+}
 
-function QueueTray({ title, items }: { title: string; items: any[] }) {
+
+function QueueTray(prop: QueueTrayProp) {
+  const { title, items, reciver, pauseTransfer, resumeTransfer, cancelTransfer } = prop;
+
+  const statusLabels: Record<string, string> = {
+    queued: "Queued",
+    sending: "Sending",
+    paused: "Paused",
+    done: "Done",
+    error: "Error",
+    canceled: "Canceled",
+  };
+
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-4 ">
-      <h3 className="font-semibold text-lg text-zinc-900 mb-3">{title}</h3>
-      <div className="flex gap-4 overflow-x-auto py-2 scrollbar-thin scrollbar-thumb-orange-200">
-        {items.length === 0 && (
-          <div className="flex flex-col items-center justify-center w-full text-zinc-400 py-8">
+    <div className="bg-white border border-zinc-200 rounded-3xl shadow-lg px-6 py-6 w-full">
+      <h3 className="font-semibold text-2xl text-zinc-800 mb-6">{title}</h3>
+
+      <div className="flex gap-5 overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-300 pb-2">
+        {items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center w-full text-zinc-400 py-12">
             <File className="w-8 h-8 mb-2" />
-            <span>No items yet</span>
+            <span className="text-sm">No items yet</span>
           </div>
+        ) : (
+          items.map((item) => (
+            <div
+              key={item.transferId}
+              className="w-56 flex-shrink-0 rounded-2xl border border-zinc-100 bg-white shadow-md hover:shadow-xl transition-all p-5"
+            >
+              {/* File Info */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 bg-zinc-100 rounded-full flex items-center justify-center">
+                  <File className="w-5 h-5 text-zinc-600" />
+                </div>
+
+                <span className="text-sm font-medium text-zinc-800 text-center truncate max-w-[180px]">
+                  {item.file?.name || item.name}
+                </span>
+
+                {/* Progress Bar */}
+                <div className="w-full bg-zinc-200 rounded-full h-2 mt-2">
+                  <div
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${item.progress || 0}%` }}
+                  />
+                </div>
+
+                {/* Progress & Status */}
+                <div className="w-full flex justify-between text-xs text-zinc-500 mt-1">
+                  <span>{item.progress}%</span>
+                  <span>{statusLabels[item.status] || item.status}</span>
+                </div>
+              </div>
+
+              {/* Controls */}
+              <div className="flex justify-center gap-3 mt-5">
+                {reciver ? (
+                  item.status !== "done" &&
+                  item.status !== "canceled" && (
+                    <button
+                      className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 shadow-sm transition"
+                      onClick={() => cancelTransfer(item.transferId)}
+                      title="Cancel"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )
+                ) : (
+                  <>
+                    {item.status === "paused" && (
+                      <button
+                        className="p-2 rounded-full bg-green-50 hover:bg-green-100 text-green-600 border border-green-200 shadow-sm transition"
+                        onClick={() => resumeTransfer(item.transferId)}
+                        title="Resume"
+                      >
+                        <Play className="w-4 h-4" />
+                      </button>
+                    )}
+                    {item.status === "sending" && (
+                      <button
+                        className="p-2 rounded-full bg-yellow-50 hover:bg-yellow-100 text-yellow-600 border border-yellow-200 shadow-sm transition"
+                        onClick={() => pauseTransfer(item.transferId)}
+                        title="Pause"
+                      >
+                        <Pause className="w-4 h-4" />
+                      </button>
+                    )}
+                    {item.status !== "done" && item.status !== "canceled" && (
+                      <button
+                        className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 shadow-sm transition"
+                        onClick={() => cancelTransfer(item.transferId)}
+                        title="Cancel"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          ))
         )}
-        {items.map(item => (
-          <div
-            key={item.transferId}
-            className="w-44 flex-shrink-0 bg-orange-50 rounded-xl p-4 flex flex-col items-center gap-2 border border-orange-100 hover:shadow-md transition"
-          >
-            <div className="w-12 h-12 bg-orange-200 rounded-full flex items-center justify-center shadow">
-              <File className="w-6 h-6 text-orange-600" />
-            </div>
-            <span className="text-sm font-medium text-zinc-800 truncate text-center max-w-[120px]">{item.file?.name || item.name}</span>
-            <div className="w-full bg-orange-100 rounded-full h-2 mt-1">
-              <div
-                className="bg-orange-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${item.progress || 0}%` }}
-              />
-            </div>
-            <span className="text-xs text-zinc-600 mt-1">{item.progress}%</span>
-          </div>
-        ))}
       </div>
     </div>
   );
 }
+
+
+
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
