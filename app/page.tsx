@@ -10,7 +10,6 @@ export default function MainPage() {
     const { socket } = useSocket();
 
     const [flightCode, setFlightCode] = useState<string>("");
-    const [showJoinInput, setShowJoinInput] = useState(false);
 
     const handleCreate = () => {
         if (!socket) return;
@@ -56,26 +55,11 @@ export default function MainPage() {
             <div className="flex flex-row space-x-4 w-full mb-2 px-8">
                 <label 
                     className="flex flex-col flex-1 items-center text-zinc-700 px-8 py-3 rounded-xl bg-zinc-100 hover:bg-zinc-100 font-semibold shadow-lg transition-all transform hover:-translate-y-1 cursor-pointer ">
-                    <span>File</span>
-                    <input
-                        type="file"
-                        className="hidden"
-                        multiple
-                        onChange={handleCreate}
-                    />
+                    <span>Start sending</span>
+                    <button className="hidden" onClick={handleCreate}/>
                 </label>
 
-                <label 
-                    className="flex flex-col flex-1 items-center px-8 py-3 text-zinc-700 rounded-xl bg-zinc-100 hover:bg-zinc-100 font-semibold shadow-lg transition-all transform hover:-translate-y-1 cursor-pointer ">
-                    <span>Folder</span>
-                    <input
-                        type="file"
-                        className="hidden"
-                        // webkitdirectory="true"
-                        // directory="true"
-                        onChange={handleCreate}
-                    />
-                </label>
+        
             </div>
 
             <p className="text-xs text-zinc-50 mb-0 tracking-tight uppercase font-mono">

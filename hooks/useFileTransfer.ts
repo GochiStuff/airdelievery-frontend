@@ -6,7 +6,7 @@ import pRetry from "p-retry";
 import streamSaver from "streamsaver";
 import { flattenFileList } from "@/utils/flattenFilelist";
 
-type TransferStatus = "queued" | "sending" | "paused" | "done" | "error" | "canceled";
+type TransferStatus = "queued" | "sending" | "paused" | "done" | "error" | "canceled" | "receiving" ;
 
 type Transfer = {
   file: File;
@@ -17,15 +17,13 @@ type Transfer = {
   status: TransferStatus;
 };
 
-type RecvTransferStatus = "receiving" | "paused" | "done" | "canceled" | "error";
-
 type RecvTransfer = {
   transferId: string;
   directoryPath: string;
   size: number;
   received: number;
   progress: number;
-  status: RecvTransferStatus;
+  status: TransferStatus;
 };
 
 type Meta = {
@@ -35,9 +33,9 @@ type Meta = {
 };
 
 export function useFileTransfer(
-  dataChannel: RTCDataChannel | null,
-  addLog: (msg: string) => void
+  dataChannel: RTCDataChannel | null
 ) {
+
   const [queue, setQueue] = useState<Transfer[]>([]);
   const [recvQueue, setRecvQueue] = useState<RecvTransfer[]>([]);
   const [meta, setMeta] = useState<Meta>({
@@ -48,20 +46,19 @@ export function useFileTransfer(
 
   // Constants for chunking
   const peerMax = (dataChannel as any)?.maxMessageSize || 256 * 1024;
-  const CHUNK_SIZE = Math.min(512 * 1024, peerMax - 1024);
-  const BUFFER_THRESHOLD = CHUNK_SIZE * 16;
+  const CHUNK_SIZE = Math.min(512 * 1024, peerMax - 1024); 
+  const BUFFER_THRESHOLD = CHUNK_SIZE * 32;
   const PROGRESS_INTERVAL_MS = 500;
 
-  // Incoming raw streams
+  // Incoming streams
   const incoming = useRef<
-    Record<string, { size: number; received: number; writer: WritableStreamDefaultWriter }>
+    Record<string, { size: number; received: number; lastProgressUpdate : number ; writer: WritableStreamDefaultWriter }>
   >({});
   const currentReceivingIdRef = useRef<string | null>(null);
 
-  // Queue for sequential sending
+  // Queue
   const pq = useRef(new PQueue({ concurrency: 1 }));
 
-  // Controls for pause/resume/cancel per transfer
   const transferControls = useRef<
     Record<
       string,
@@ -70,9 +67,7 @@ export function useFileTransfer(
         resumePromise?: Promise<void>;
         resumeResolve?: () => void;
         canceled: boolean;
-      }
-    >
-  >({});
+    } >>({});
 
   const statusMap: Record<TransferStatus, string> = {
     queued: "Waiting to send",
@@ -81,9 +76,9 @@ export function useFileTransfer(
     done: "Completed",
     error: "Failed",
     canceled: "Canceled",
+    receiving: "Receiving"
   };
 
-  // Handle file selection: add to sender queue
   const handleFileSelect = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files) return;
@@ -113,7 +108,7 @@ export function useFileTransfer(
     []
   );
 
-  // Read file in chunks
+  // READ FILE IN CHUNKS HELPER 
   async function* readFileInChunks(file: File) {
     const reader = file.stream().getReader();
     let buffer = new Uint8Array(0);
@@ -136,7 +131,9 @@ export function useFileTransfer(
     return c;
   }
 
-  // Send a file with pause/resume/cancel and notify receiver
+  
+
+  // SEND 
 const sendFile = useCallback(
   async ({ file, transferId, directoryPath }: Transfer) => {
     if (!dataChannel) throw new Error("No dataChannel");
@@ -150,14 +147,12 @@ const sendFile = useCallback(
     let lastTime = Date.now();
     let lastSent = 0;
 
-    addLog(`🚀 Sending ${directoryPath}`);
-    // Send init header
+    // Send init 
     dataChannel.send(JSON.stringify({ type: "init", transferId, directoryPath, size: total }));
 
     for await (const chunk of readFileInChunks(file)) {
-      // 1. If canceled before starting this chunk:
+      // CONTROLS 
       if (controls.canceled) {
-        addLog(`❌ Sending canceled locally before chunk: ${directoryPath}`);
         dataChannel.send(JSON.stringify({ type: "cancel", transferId }));
         setQueue((q) =>
           q.map((x) =>
@@ -166,13 +161,14 @@ const sendFile = useCallback(
         );
         throw new Error("Canceled");
       }
-      // 2. Pause handling
       if (controls.paused) {
         dataChannel.send(JSON.stringify({ type: "pause", transferId }));
         await controls.resumePromise;
         dataChannel.send(JSON.stringify({ type: "resume", transferId }));
       }
-      // 3. Backpressure
+
+
+      // Backpressure
       if (dataChannel.bufferedAmount > BUFFER_THRESHOLD) {
         await new Promise<void>((res) => {
           const listener = () => {
@@ -185,25 +181,13 @@ const sendFile = useCallback(
       }
       if (dataChannel.readyState !== "open") throw new Error("Connection closed");
 
-      // 4. Send chunk header
+      // CHUNK 
+      // - header 
       dataChannel.send(JSON.stringify({ type: "chunk", transferId, size: chunk.length }));
-
-      // 5. Check cancellation again before sending the body:
-      if (controls.canceled) {
-        addLog(`❌ Sending canceled locally after header: ${directoryPath}`);
-        dataChannel.send(JSON.stringify({ type: "cancel", transferId }));
-        setQueue((q) =>
-          q.map((x) =>
-            x.transferId === transferId ? { ...x, status: "canceled" } : x
-          )
-        );
-        throw new Error("Canceled");
-      }
-
-      // 6. Send the chunk data
+      // - body 
       dataChannel.send(chunk.buffer);
 
-      // 7. Update progress
+      // Progress track
       sent += chunk.length;
       const now = Date.now();
       const pct = (sent / total) * 100;
@@ -227,7 +211,7 @@ const sendFile = useCallback(
       }
     }
 
-    // Done successfully
+    // Done
     dataChannel.send(JSON.stringify({ type: "done", transferId }));
     setQueue((q) =>
       q.map((x) =>
@@ -237,15 +221,15 @@ const sendFile = useCallback(
       )
     );
     setMeta((m) => ({ ...m, totalSent: m.totalSent + total }));
-    addLog(`✅ Completed ${directoryPath}`);
   },
-  [dataChannel, addLog]
+  [dataChannel]
 );
 
 
-  // Handle incoming messages: build recvQueue and track progress, plus handle control messages
+  // RECIEVE
   const handleMessage = useCallback(
     (event: MessageEvent) => {
+      // headers 
       if (typeof event.data === "string") {
         let msg: any;
         try {
@@ -255,7 +239,13 @@ const sendFile = useCallback(
           return;
         }
         const { type, transferId, directoryPath, size } = msg;
-        // INIT from remote sender
+        // CHUNK HEADER 
+        if (type === "chunk") {
+          currentReceivingIdRef.current = transferId;
+          return;
+        }
+        
+        // INIT 
         if (type === "init") {
           try {
             const stream = streamSaver.createWriteStream(directoryPath, { size });
@@ -263,13 +253,13 @@ const sendFile = useCallback(
               writer: stream.getWriter(),
               size,
               received: 0,
+              lastProgressUpdate : 0,
             };
-            // Add to receive queue
+    
             setRecvQueue((rq) => [
               ...rq,
               { transferId, directoryPath, size, received: 0, progress: 0, status: "receiving" }
             ]);
-            addLog(`📥 Preparing to receive ${directoryPath}`);
           } catch (err) {
             console.error("Error creating write stream:", err);
             setRecvQueue((rq) =>
@@ -279,11 +269,11 @@ const sendFile = useCallback(
                   : r
               )
             );
-            addLog(`❌ Failed to prepare receiving for ${directoryPath}`);
           }
           return;
         }
-        // Remote informs us of a pause: if we're receiving, update status to paused
+
+        // CONTROLS 
         if (type === "pause") {
           setRecvQueue((rq) =>
             rq.map((r) =>
@@ -292,10 +282,8 @@ const sendFile = useCallback(
                 : r
             )
           );
-          addLog(`⏸️ Remote paused receiving ${transferId}`);
           return;
         }
-        // Remote informs us of a resume: if we had paused, update back to receiving
         if (type === "resume") {
           setRecvQueue((rq) =>
             rq.map((r) =>
@@ -304,17 +292,10 @@ const sendFile = useCallback(
                 : r
             )
           );
-          addLog(`▶️ Remote resumed receiving ${transferId}`);
           return;
         }
-        // Remote informs us of cancel: 
-        // Could be: 
-        // - Sender sending cancel: we’re receiver -> abort receive
-        // - Receiver sending cancel: we’re sender -> abort send
         if (type === "cancel") {
-          // If we have this transfer in incoming (i.e., receiver side), abort receive
           if (incoming.current[transferId]) {
-            // Abort the writer if exists
             try {
               incoming.current[transferId].writer.abort();
             } catch {}
@@ -324,9 +305,6 @@ const sendFile = useCallback(
           r.transferId === transferId ? { ...r, status: "canceled" } : r
               )
             );
-            addLog(`🛑 Remote canceled receiving ${transferId}`);
-            // Prevent further downloads by disabling streamSaver for this transfer
-            // (No further action needed: abort() and delete from incoming prevents any more writes)
             return;
           }
           // Else, if this transfer is in our send queue, it means remote receiver canceled: abort send
@@ -343,19 +321,11 @@ const sendFile = useCallback(
           x.transferId === transferId ? { ...x, status: "canceled" } : x
               )
             );
-            addLog(`🛑 Remote canceled sending ${transferId}`);
           }
           return;
         }
-        // Remote signals done: optional to show a log
+        // DONE
         if (type === "done") {
-          // Remote finished sending; but actual writer close happens on binary end detection
-          addLog(`ℹ️ Remote finished sending ${transferId}`);
-          return;
-        }
-        // CHUNK header: indicates next binary belongs to that transfer
-        if (type === "chunk") {
-          currentReceivingIdRef.current = transferId;
           return;
         }
         return;
@@ -373,16 +343,14 @@ const sendFile = useCallback(
         currentReceivingIdRef.current = null;
         return;
       }
-      // Check if this receive was canceled or paused
+
       const recvEntry = recvQueue.find((r) => r.transferId === transferId);
       if (recvEntry) {
         if (recvEntry.status === "canceled") {
-          // skip writing further chunks
           currentReceivingIdRef.current = null;
           return;
         }
         if (recvEntry.status === "paused") {
-          // skip writing until resume arrives
           return;
         }
       }
@@ -391,7 +359,6 @@ const sendFile = useCallback(
         rec.writer.write(new Uint8Array(event.data as ArrayBuffer));
       } catch (err) {
         console.error("Error writing chunk:", err);
-        addLog(`❌ Error writing chunk for ${transferId}`);
         try { rec.writer.abort?.(); } catch {}
         delete incoming.current[transferId];
         setRecvQueue((rq) =>
@@ -403,28 +370,30 @@ const sendFile = useCallback(
         return;
       }
       rec.received += (event.data as ArrayBuffer).byteLength;
-      setMeta((m) => ({
-        ...m,
-        totalReceived: m.totalReceived + (event.data as ArrayBuffer).byteLength,
-      }));
-      // Update receive queue progress
-      setRecvQueue((rq) =>
-        rq.map((r) =>
-          r.transferId === transferId && r.status === "receiving"
-            ? {
-                ...r,
-                received: rec.received,
-                progress: Math.round((rec.received / rec.size) * 100),
-              }
-            : r
-        )
-      );
+      // Throttle progress update to every 0.5s
+      if (!rec.lastProgressUpdate || Date.now() - rec.lastProgressUpdate > 500) {
+        setMeta((m) => ({
+          ...m,
+          totalReceived: m.totalReceived + (event.data as ArrayBuffer).byteLength,
+        }));
+        setRecvQueue((rq) =>
+          rq.map((r) =>
+        r.transferId === transferId && r.status === "receiving"
+          ? {
+          ...r,
+          received: rec.received,
+          progress: Math.round((rec.received / rec.size) * 100),
+            }
+          : r
+          )
+        );
+        rec.lastProgressUpdate = Date.now();
+      }
 
       // If done
       if (rec.received >= rec.size) {
         try {
           rec.writer.close();
-          addLog(`✅ File received completed: ${transferId}`);
         } catch (err) {
           console.error("Error closing writer:", err);
         }
@@ -437,24 +406,24 @@ const sendFile = useCallback(
         currentReceivingIdRef.current = null;
       }
     },
-    [addLog, recvQueue]
+    [ recvQueue]
   );
 
-  // Setup dataChannel
+
+
+  // SETUP 
   useEffect(() => {
     if (!dataChannel) return;
     dataChannel.binaryType = "arraybuffer";
     dataChannel.bufferedAmountLowThreshold = BUFFER_THRESHOLD;
     dataChannel.onmessage = handleMessage;
     dataChannel.onopen = () => {
-      addLog("⚙️ Receiver: dataChannel open");
     };
     dataChannel.onclose = () => {
-      addLog("ℹ️ dataChannel closed");
     };
     dataChannel.onerror = (err) => {
       console.error("RTCDataChannel error", err);
-      addLog("❌ dataChannel error");
+
     };
     return () => {
       dataChannel.onmessage = null;
@@ -462,9 +431,10 @@ const sendFile = useCallback(
       dataChannel.onclose = null;
       dataChannel.onerror = null;
     };
-  }, [dataChannel, handleMessage, addLog]);
+  }, [dataChannel, handleMessage]);
 
-  // Process sender queue: sequentially send queued items
+
+  // SENDING QUEUE 
   useEffect(() => {
     if (dataChannel?.readyState !== "open") return;
     queue.forEach((t) => {
@@ -475,7 +445,7 @@ const sendFile = useCallback(
         )
       );
       pq.current
-        .add(() => pRetry(() => sendFile(t), { retries: 2 }))
+        .add(() => pRetry(() => sendFile(t), { retries: 0 })) // I MIGHT CHANGE IT 
         .catch((err) => {
           if (err.message === "Canceled") {
             // already marked canceled
@@ -491,9 +461,10 @@ const sendFile = useCallback(
           }
         });
     });
-  }, [queue, dataChannel, sendFile]);
+  }, [queue, dataChannel, sendFile ])
+ 
 
-  // Pause a transfer (sender)
+  // CONTROL HELLPER 
   const pauseTransfer = useCallback((transferId: string) => {
     setQueue((q) =>
       q.map((x) => {
@@ -510,10 +481,7 @@ const sendFile = useCallback(
         return x;
       })
     );
-    addLog(`⏸️ Paused transfer ${transferId}`);
-  }, [addLog]);
-
-  // Resume a paused transfer (sender)
+  }, []);
   const resumeTransfer = useCallback((transferId: string) => {
     setQueue((q) =>
       q.map((x) => {
@@ -531,10 +499,7 @@ const sendFile = useCallback(
         return x;
       })
     );
-    addLog(`▶️ Resumed transfer ${transferId}`);
-  }, [addLog]);
-
-  // Cancel a transfer (sender): mark status canceled locally, send cancel to remote
+  }, []);
   const cancelTransfer = useCallback((transferId: string) => {
     const controls = transferControls.current[transferId];
     if (controls) {
@@ -553,10 +518,7 @@ const sendFile = useCallback(
     if (dataChannel && dataChannel.readyState === "open") {
       dataChannel.send(JSON.stringify({ type: "cancel", transferId }));
     }
-    addLog(`🛑 Canceled transfer locally ${transferId}`);
-  }, [addLog, dataChannel]);
-
-  // Cancel receive: mark in recvQueue as canceled, skip further writes, notify remote
+  }, [ dataChannel]);
   const cancelReceive = useCallback((transferId: string) => {
     const rec = incoming.current[transferId];
     if (rec) {
@@ -575,10 +537,8 @@ const sendFile = useCallback(
     if (dataChannel && dataChannel.readyState === "open") {
       dataChannel.send(JSON.stringify({ type: "cancel", transferId }));
     }
-    addLog(`🛑 Canceled receiving locally ${transferId}`);
-  }, [addLog, dataChannel]);
-
-  // Expose a user-friendly status string
+  }, [ dataChannel]);
+   //STATUS UPDATES 
   const userQueue = queue.map((t) => ({
     ...t,
     userStatus: statusMap[t.status],
@@ -593,6 +553,6 @@ const sendFile = useCallback(
     resumeTransfer,
     cancelTransfer,
     cancelReceive,
-    handleMessage, 
+    handleMessage
   };
 }

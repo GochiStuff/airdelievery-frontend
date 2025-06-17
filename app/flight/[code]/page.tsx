@@ -11,13 +11,8 @@ export default function RoomPage() {
   const flight = typeof code === "string" ? code : "";
   const [showQR, setShowQR] = useState(false);
 
-  // Logs & Hooks
-  const [logs, setLogs] = React.useState<string[]>([]);
-  const addLog = React.useCallback((msg: string) => {
-    setLogs(prev => [...prev, `${new Date().toISOString()} - ${msg}`]);
-  }, []);
-  const { dataChannel, status, members  , } = useWebRTC(flight, e => fileTrans.handleMessage(e), addLog);
-  const fileTrans = useFileTransfer(dataChannel, addLog);
+  const { dataChannel, status, members  , } = useWebRTC(flight, e => fileTrans.handleMessage(e));
+  const fileTrans = useFileTransfer(dataChannel);
 
   return (
     <main className="min-h-screen  p-4 sm:p-8 lg:p-12">
@@ -245,16 +240,6 @@ export default function RoomPage() {
             </div>
             </section>
         </div>
-
-        {/* Logs */}
-        <section className="bg-white rounded-2xl shadow-lg p-6 border-2 border-orange-400">
-          <h2 className="text-xl font-semibold text-zinc-900 mb-4">Activity Logs</h2>
-          <div className="h-48 overflow-y-auto bg-zinc-50 p-4 rounded-lg font-mono text-sm text-zinc-800 space-y-1">
-            {logs.map((l, i) => (
-              <div key={i}>{l}</div>
-            ))}
-          </div>
-        </section>
       </div>
     </main>
   );

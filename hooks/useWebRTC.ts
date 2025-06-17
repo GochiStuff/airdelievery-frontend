@@ -20,7 +20,6 @@ function userMessage(msg: string) {
 export function useWebRTC(
   code: string,
   onMessage: (e: MessageEvent) => void,
-  addLog: (msg: string) => void
 ) {
   const { socket } = useSocket();
 
@@ -35,7 +34,6 @@ export function useWebRTC(
 
   function log(msg: string) {
     const friendly = userMessage(msg);
-    addLog(friendly);
     setStatus(friendly);
   }
 
@@ -74,8 +72,6 @@ export function useWebRTC(
     if (!peer.current) return;
 
     dataChannel.current = peer.current.createDataChannel("fileTransfer" , {
-        ordered: false,
-  maxRetransmits: 0,
     });
 
     dataChannel.current.onopen = () => log("DataChannel opened.");
