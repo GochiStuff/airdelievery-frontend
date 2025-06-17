@@ -15,7 +15,7 @@ export default function RoomPage() {
   const fileTrans = useFileTransfer(dataChannel);
 
   return (
-    <main className="min-h-screen  p-4 sm:p-8 lg:p-12">
+    <main className="min-h-screen mb-15 p-4 sm:p-8 lg:p-12">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header with Flight Info & Share */}
         <header className="flex flex-col md:flex-row justify-between items-center bg-white rounded-2xl shadow-xl p-8 mb-6 ">
@@ -216,28 +216,59 @@ export default function RoomPage() {
             </div>
           </section>
 
-            {/* Promote Site Experience Tip Card */}
-            <section className="flex-1 bg-white rounded-2xl shadow-lg p-8  flex flex-col gap-6 justify-between">
-            <div className="flex items-center gap-5">
-              <div className="flex-shrink-0">
+            <section className="flex-1 bg-white rounded-2xl shadow-lg p-10 flex flex-col justify-between min-h-[260px] border border-zinc-100">
+              <div className="flex items-center gap-6">
+                
+                <div>
+                  <h3 className="font-bold text-2xl text-zinc-900 mb-1 tracking-tight flex items-center p-2 gap-2">
+                  <Heart className="w-10 h-10 text-zinc-400 fill-zinc-700 drop-shadow" />
+                    Love Air Delivery?
+                  </h3>
+                  <p className="text-zinc-700 text-base mb-3 leading-relaxed">
+                    If you enjoy using this site, <span className="font-semibold text-orange-500">share it with friends.</span>
+                  </p>
+                  <ul className="space-y-1 text-zinc-500 text-sm mb-4">
+                    <li>
+                      <span className="font-bold text-zinc-700">Tip:</span> For <span className="font-medium">optimal speed</span>, connect both devices to the <span className="font-medium">same Wi-Fi network</span>.
+                    </li>
+                    <li>
+                      <span className="font-bold text-zinc-700">Note:</span> <span className="font-medium">Do not refresh</span> the page after both users are connected.
+                    </li>
+                  </ul>
+                  <div className="flex gap-3 mt-2">
+                    <button
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white font-semibold shadow-sm transition"
+                      onClick={async () => {
+                        if (typeof window !== "undefined" && navigator.share) {
+                          await navigator.share({
+                            title: "Try Air Delivery!",
+                            text: "Send files instantly with Air Delivery ",
+                            url: window.location.origin,
+                          });
+                        } else {
+                          await navigator.clipboard.writeText(window.location.origin);
+                          alert("Link copied! Share it with your friends.");
+                        }
+                      }}
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share Site
+                    </button>
+                    <button
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold shadow-sm transition  "
+                      onClick={() => {
+                        if (window.matchMedia('(display-mode: standalone)').matches) {
+                          alert("Already installed as an app!");
+                        } else {
+                          alert("Tip: You can install this site as an app from your browser menu for quick access!");
+                        }
+                      }}
+                    >
+                      Install App
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div>
-              <h3 className="font-bold flex gap-2 items-center text-2xl text-black mb-2">
-                <Heart className="fill-black"/> Love Air Delivery ?</h3>
-              <p className="text-black text-xl">
- Save this site or install as an app (PWA) for instant access anytime!
-              </p>
-              </div>
-            </div>
-             <div className="flex justify-end mt-2">
-              <button
-                className="px-3 py-1 rounded text-red-500 underline font-medium  transition text-xs"
-                onClick={() => alert('Thank you for your feedback!')}
-                title="Report an issue"
-              >
-                Report
-              </button>
-            </div>
             </section>
         </div>
       </div>

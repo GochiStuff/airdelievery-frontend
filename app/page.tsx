@@ -118,30 +118,22 @@ export default function MainPage() {
                 </div>
                 {/* Social icons */}
                 <div className="flex justify-end space-x-4 mt-auto">
-                    {/* GitHub */}
-                    <a
-                        href=""
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-zinc-100 hover:text-orange-400 transition"
-                        title="GitHub"
-                    >
-                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.49 2.87 8.3 6.84 9.64.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.36-3.37-1.36-.45-1.18-1.1-1.5-1.1-1.5-.9-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.7 0 0 .84-.28 2.75 1.05A9.38 9.38 0 0 1 12 6.84c.85.004 1.71.12 2.51.34 1.91-1.33 2.75-1.05 2.75-1.05.55 1.4.2 2.44.1 2.7.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.8 0 .26.18.57.69.47C19.13 20.55 22 16.75 22 12.26 22 6.58 17.52 2 12 2Z"/>
-                        </svg>
-                    </a>
+                    
                     {/* X (Twitter) */}
                     <a
-                        href="https://x.com/gochistuff"
+                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                            "Check out Airdelivery.io for fast, private, unlimited P2P file sharing! No hassle, just send or receive. #FileSharing #P2P #Airdelivery"
+                        )}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-zinc-100 hover:text-orange-400 transition"
-                        title="X"
+                        title="Share on Twitter"
                     >
                         <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M17.53 3H21l-7.19 8.21L22 21h-6.56l-5.18-6.44L4.47 21H1l7.64-8.73L2 3h6.68l4.74 5.91L17.53 3ZM16.3 19h2.13l-5.82-7.23-1.71 1.98L16.3 19ZM5.09 5l5.38 6.69 1.7-1.97L7.36 5H5.09Z"/>
                         </svg>
-                    </a>
+                </a>
+                
                 </div>
             </div>
                </div>
