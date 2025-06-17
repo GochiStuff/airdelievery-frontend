@@ -111,7 +111,7 @@ export function useFileTransfer(
   );
 
   // READ FILE IN CHUNKS HELPER 
- async function* readFileInChunks(file: File) {
+   async function* readFileInChunks(file: File) {
     const reader = file.stream().getReader();
     let buffer = new Uint8Array(0);
     while (true) {
@@ -131,6 +131,29 @@ export function useFileTransfer(
     c.set(a, 0);
     c.set(b, a.length);
     return c;
+  }
+
+function createPacket( transferId  : string  , chunk : Uint8Array ){
+
+    const transferIdBuf = new TextEncoder().encode(transferId);
+    const headerSize = 4 + transferIdBuf.length + 4;
+    const packet = new ArrayBuffer(headerSize + chunk.byteLength);
+    const view = new DataView(packet);
+
+    let offset = 0 ; 
+    view.setUint32( offset , transferIdBuf.length);
+    offset += 4;
+
+    new Uint8Array(packet , offset , transferIdBuf.length).set(transferIdBuf);
+    offset += transferIdBuf.length;
+
+    view.setUint32(offset, chunk.byteLength);
+    offset += 4;
+
+    new Uint8Array(packet , offset).set(new Uint8Array(chunk));
+
+    return packet;
+
   }
 
   // SEND 
@@ -181,8 +204,8 @@ const sendFile = useCallback(
       }
       if (dataChannel.readyState !== "open") throw new Error("Connection closed");
 
-     dataChannel.send(JSON.stringify({ type: "chunk", transferId, size: chunk.length }));
-     dataChannel.send(chunk.buffer);
+     const packet = createPacket(transferId, chunk);
+      dataChannel.send(packet);
 
       // Progress track
       sent += chunk.length;
@@ -222,6 +245,27 @@ const sendFile = useCallback(
   [dataChannel]
 );
 
+
+function unpack(buffer : ArrayBuffer ){
+  const view = new DataView(buffer);
+  let offset = 0;
+
+  const transferIdLength = view.getUint32(offset);
+  offset += 4;
+
+  const transferId = new TextDecoder().decode(
+    new Uint8Array( buffer , offset , transferIdLength)
+  );
+
+  offset += transferIdLength;
+
+  const chunkSize = view.getUint32(offset);
+  offset += 4;
+  
+  const chunk = buffer.slice(offset, offset + chunkSize);
+
+  return { transferId, chunk };
+}
 
 async function ProcessRecQue(transferId: string) {
   const rec = incoming.current[transferId];
@@ -454,16 +498,12 @@ async function ProcessRecQue(transferId: string) {
 
       // Binary data
       
-      const transferId = currentReceivingIdRef.current;
-      if (!transferId) {
-        console.warn("No transferId set for incoming chunk");
-        return;
-      }
+      const { transferId , chunk } =  unpack(event.data);
 
       const rec = incoming.current[transferId];
       if(!rec) return;
 
-      rec.queue.push(event.data);
+      rec.queue.push(chunk);
       if (!rec.writing) {
         rec.writing = true;
         ProcessRecQue(transferId);
