@@ -111,19 +111,27 @@ export function useFileTransfer(
   );
 
   // READ FILE IN CHUNKS HELPER 
-  async function* readFileInChunks(file: File) {
-  const total = file.size;
-  let offset = 0;
-  while (offset < total) {
-    const end = Math.min(offset + CHUNK_SIZE, total);
-    // slice returns a Blob for [offset, end)
-    const blobSlice = file.slice(offset, end);
-    const arrayBuffer = await blobSlice.arrayBuffer();
-    yield new Uint8Array(arrayBuffer);
-    offset = end;
+ async function* readFileInChunks(file: File) {
+    const reader = file.stream().getReader();
+    let buffer = new Uint8Array(0);
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer = concat(buffer, new Uint8Array(value));
+      while (buffer.length >= CHUNK_SIZE) {
+        yield buffer.slice(0, CHUNK_SIZE);
+        buffer = buffer.slice(CHUNK_SIZE);
+      }
+    }
+    if (buffer.length) yield buffer;
   }
-}
 
+  function concat(a: Uint8Array, b: Uint8Array) {
+    const c = new Uint8Array(a.length + b.length);
+    c.set(a, 0);
+    c.set(b, a.length);
+    return c;
+  }
 
   // SEND 
 const sendFile = useCallback(
@@ -214,27 +222,6 @@ const sendFile = useCallback(
   [dataChannel]
 );
 
-
-function unpack(buffer : ArrayBuffer ){
-  const view = new DataView(buffer);
-  let offset = 0;
-
-  const transferIdLength = view.getUint32(offset);
-  offset += 4;
-
-  const transferId = new TextDecoder().decode(
-    new Uint8Array( buffer , offset , transferIdLength)
-  );
-
-  offset += transferIdLength;
-
-  const chunkSize = view.getUint32(offset);
-  offset += 4;
-  
-  const chunk = buffer.slice(offset, offset + chunkSize);
-
-  return { transferId, chunk };
-}
 
 async function ProcessRecQue(transferId: string) {
   const rec = incoming.current[transferId];
