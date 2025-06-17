@@ -5,6 +5,7 @@ import PQueue from "p-queue";
 import pRetry from "p-retry";
 import streamSaver from "streamsaver";
 import { flattenFileList } from "@/utils/flattenFilelist";
+import { buffer } from "stream/consumers";
 
 type TransferStatus = "queued" | "sending" | "paused" | "done" | "error" | "canceled" | "receiving" ;
 
@@ -44,15 +45,16 @@ export function useFileTransfer(
     speedBps: 0,
   });
 
-  // Constants for chunking
+  
+  const MAX_RAM_SIZE = 1024 * 1024 * 1024;
   const peerMax = (dataChannel as any)?.maxMessageSize || 256 * 1024;
-  const CHUNK_SIZE = Math.min(512 * 1024, peerMax - 1024); 
-  const BUFFER_THRESHOLD = CHUNK_SIZE * 32;
+  const CHUNK_SIZE = Math.min(256 * 1024, Math.floor(peerMax * 0.9));
+  const BUFFER_THRESHOLD = CHUNK_SIZE * 8;
   const PROGRESS_INTERVAL_MS = 500;
 
   // Incoming streams
   const incoming = useRef<
-    Record<string, { size: number; received: number; lastProgressUpdate : number ; writer: WritableStreamDefaultWriter }>
+    Record<string, { size: number; received: number;writing : boolean;  queue: ArrayBuffer[], lastProgressUpdate : number ; writer: WritableStreamDefaultWriter }>
   >({});
   const currentReceivingIdRef = useRef<string | null>(null);
 
@@ -110,19 +112,18 @@ export function useFileTransfer(
 
   // READ FILE IN CHUNKS HELPER 
   async function* readFileInChunks(file: File) {
-    const reader = file.stream().getReader();
-    let buffer = new Uint8Array(0);
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer = concat(buffer, new Uint8Array(value));
-      while (buffer.length >= CHUNK_SIZE) {
-        yield buffer.slice(0, CHUNK_SIZE);
-        buffer = buffer.slice(CHUNK_SIZE);
-      }
-    }
-    if (buffer.length) yield buffer;
+  const total = file.size;
+  let offset = 0;
+  while (offset < total) {
+    const end = Math.min(offset + CHUNK_SIZE, total);
+    // slice returns a Blob for [offset, end)
+    const blobSlice = file.slice(offset, end);
+    const arrayBuffer = await blobSlice.arrayBuffer();
+    yield new Uint8Array(arrayBuffer);
+    offset = end;
   }
+}
+
 
   function concat(a: Uint8Array, b: Uint8Array) {
     const c = new Uint8Array(a.length + b.length);
@@ -131,7 +132,28 @@ export function useFileTransfer(
     return c;
   }
 
-  
+function createPacket( transferId  : string  , chunk : Uint8Array ){
+
+    const transferIdBuf = new TextEncoder().encode(transferId);
+    const headerSize = 4 + transferIdBuf.length + 4;
+    const packet = new ArrayBuffer(headerSize + chunk.byteLength);
+    const view = new DataView(packet);
+
+    let offset = 0 ; 
+    view.setUint32( offset , transferIdBuf.length);
+    offset += 4;
+
+    new Uint8Array(packet , offset , transferIdBuf.length).set(transferIdBuf);
+    offset += transferIdBuf.length;
+
+    view.setUint32(offset, chunk.byteLength);
+    offset += 4;
+
+    new Uint8Array(packet , offset).set(new Uint8Array(chunk));
+
+    return packet;
+
+  }
 
   // SEND 
 const sendFile = useCallback(
@@ -181,11 +203,8 @@ const sendFile = useCallback(
       }
       if (dataChannel.readyState !== "open") throw new Error("Connection closed");
 
-      // CHUNK 
-      // - header 
-      dataChannel.send(JSON.stringify({ type: "chunk", transferId, size: chunk.length }));
-      // - body 
-      dataChannel.send(chunk.buffer);
+     const packet = createPacket(transferId, chunk);
+      dataChannel.send(packet);
 
       // Progress track
       sent += chunk.length;
@@ -226,6 +245,104 @@ const sendFile = useCallback(
 );
 
 
+function unpack(buffer : ArrayBuffer ){
+  const view = new DataView(buffer);
+  let offset = 0;
+
+  const transferIdLength = view.getUint32(offset);
+  offset += 4;
+
+  const transferId = new TextDecoder().decode(
+    new Uint8Array( buffer , offset , transferIdLength)
+  );
+
+  offset += transferIdLength;
+
+  const chunkSize = view.getUint32(offset);
+  offset += 4;
+  
+  const chunk = buffer.slice(offset, offset + chunkSize);
+
+  return { transferId, chunk };
+}
+
+async function ProcessRecQue(transferId: string) {
+  const rec = incoming.current[transferId];
+
+  if (!rec) {
+    console.warn("No matching incoming entry for:", transferId);
+    currentReceivingIdRef.current = null;
+    return;
+  }
+
+  try {
+    while (rec.queue.length > 0) {
+      const chunk = rec.queue.shift();
+      if (!chunk) continue;
+
+      try {
+        await rec.writer.write(new Uint8Array(chunk));
+        rec.received += chunk.byteLength;
+
+
+        if (
+          !rec.lastProgressUpdate ||
+          Date.now() - rec.lastProgressUpdate > PROGRESS_INTERVAL_MS
+        ) {
+          setMeta((m) => ({
+            ...m,
+            totalReceived: m.totalReceived + chunk.byteLength,
+          }));
+          setRecvQueue((rq) =>
+            rq.map((r) =>
+              r.transferId === transferId && r.status === "receiving"
+                ? {
+                    ...r,
+                    received: rec.received,
+                    progress: Math.round((rec.received / rec.size) * 100),
+                  }
+                : r
+            )
+          );
+          rec.lastProgressUpdate = Date.now();
+        }
+      } catch (err) {
+        console.error("Writer error:", err);
+        try {
+          await rec.writer.abort?.();
+        } catch {}
+        delete incoming.current[transferId];
+        setRecvQueue((rq) =>
+          rq.map((r) =>
+            r.transferId === transferId ? { ...r, status: "error" } : r
+          )
+        );
+        return;
+      }
+    }
+
+    if (rec.received >= rec.size) {
+      try {
+        await rec.writer.close();
+      } catch {}
+      delete incoming.current[transferId];
+      setRecvQueue((rq) =>
+        rq.map((r) =>
+          r.transferId === transferId
+            ? { ...r, status: "done", progress: 100 }
+            : r
+        )
+      );
+      currentReceivingIdRef.current = null;
+    }
+  } finally {
+
+    rec.writing = false;
+  }
+}
+
+
+
   // RECIEVE
   const handleMessage = useCallback(
     (event: MessageEvent) => {
@@ -248,9 +365,56 @@ const sendFile = useCallback(
         // INIT 
         if (type === "init") {
           try {
-            const stream = streamSaver.createWriteStream(directoryPath, { size });
+
+          let writer: WritableStreamDefaultWriter;
+          let chunks: Uint8Array[] | undefined = undefined;
+          
+
+            if ( size < MAX_RAM_SIZE){
+              console.log("USING RAM")
+              chunks = [];
+              // writing own ram writer 
+              writer = {
+                write: (chunk: Uint8Array) => { chunks!.push(chunk); return Promise.resolve(); },
+                close: () => {
+                  const totalLength = chunks!.reduce((sum, c) => sum + c.length, 0);
+                  const all = new Uint8Array(totalLength);
+                  let offset = 0;
+                  for (const c of chunks!) {
+                    all.set(c, offset);
+                    offset += c.length;
+                  }
+
+                  const blob = new Blob([all]);
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = directoryPath;
+                  document.body.appendChild(a);
+                  a.click();
+                  setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                    a.remove();
+                  }, 200);
+                  return Promise.resolve();
+                },
+                abort: () => { chunks = undefined; return Promise.resolve(); },
+                // Required properties for WritableStreamDefaultWriter
+                get closed() { return Promise.resolve(); },
+                get desiredSize() { return null; },
+                get ready() { return Promise.resolve(); },
+                releaseLock: () => {},
+              } as WritableStreamDefaultWriter<any>;
+
+              
+            }else{
+              const stream = streamSaver.createWriteStream(directoryPath, { size });
+              writer = stream.getWriter();
+            }
             incoming.current[transferId] = {
-              writer: stream.getWriter(),
+              writer,
+              queue: [],
+              writing:false,
               size,
               received: 0,
               lastProgressUpdate : 0,
@@ -332,79 +496,19 @@ const sendFile = useCallback(
       }
 
       // Binary data
-      const transferId = currentReceivingIdRef.current;
-      if (!transferId) {
-        console.warn("No transferId set for incoming chunk");
-        return;
-      }
+      
+      const { transferId , chunk } =  unpack(event.data);
+
       const rec = incoming.current[transferId];
-      if (!rec) {
-        console.warn("No matching incoming entry for:", transferId);
-        currentReceivingIdRef.current = null;
-        return;
+      if(!rec) return;
+
+      rec.queue.push(chunk);
+      if (!rec.writing) {
+        rec.writing = true;
+        ProcessRecQue(transferId);
       }
 
-      const recvEntry = recvQueue.find((r) => r.transferId === transferId);
-      if (recvEntry) {
-        if (recvEntry.status === "canceled") {
-          currentReceivingIdRef.current = null;
-          return;
-        }
-        if (recvEntry.status === "paused") {
-          return;
-        }
-      }
-
-      try {
-        rec.writer.write(new Uint8Array(event.data as ArrayBuffer));
-      } catch (err) {
-        console.error("Error writing chunk:", err);
-        try { rec.writer.abort?.(); } catch {}
-        delete incoming.current[transferId];
-        setRecvQueue((rq) =>
-          rq.map((r) =>
-            r.transferId === transferId ? { ...r, status: "error" } : r
-          )
-        );
-        currentReceivingIdRef.current = null;
-        return;
-      }
-      rec.received += (event.data as ArrayBuffer).byteLength;
-      // Throttle progress update to every 0.5s
-      if (!rec.lastProgressUpdate || Date.now() - rec.lastProgressUpdate > 500) {
-        setMeta((m) => ({
-          ...m,
-          totalReceived: m.totalReceived + (event.data as ArrayBuffer).byteLength,
-        }));
-        setRecvQueue((rq) =>
-          rq.map((r) =>
-        r.transferId === transferId && r.status === "receiving"
-          ? {
-          ...r,
-          received: rec.received,
-          progress: Math.round((rec.received / rec.size) * 100),
-            }
-          : r
-          )
-        );
-        rec.lastProgressUpdate = Date.now();
-      }
-
-      // If done
-      if (rec.received >= rec.size) {
-        try {
-          rec.writer.close();
-        } catch (err) {
-          console.error("Error closing writer:", err);
-        }
-        delete incoming.current[transferId];
-        setRecvQueue((rq) =>
-          rq.map((r) =>
-            r.transferId === transferId ? { ...r, status: "done", progress: 100 } : r
-          )
-        );
-        currentReceivingIdRef.current = null;
-      }
+      
     },
     [ recvQueue]
   );
