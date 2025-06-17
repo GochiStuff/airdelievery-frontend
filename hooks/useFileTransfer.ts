@@ -292,11 +292,6 @@ async function ProcessRecQue(transferId: string) {
             setMeta((m) => ({
             ...m,
             totalReceived: m.totalReceived + chunk.byteLength,
-            speedBps: (() => {
-              const bytesSinceLast = rec.received - (m.totalReceived || 0);
-              const timeElapsedSec = (Date.now() - (rec.lastProgressUpdate || Date.now())) / 1000;
-              return timeElapsedSec > 0 ? Math.round(bytesSinceLast / timeElapsedSec) : m.speedBps;
-            })(),
             }));
           setRecvQueue((rq) =>
             rq.map((r) =>

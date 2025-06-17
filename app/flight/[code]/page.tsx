@@ -22,21 +22,21 @@ export default function RoomPage() {
           {/* Left: Flight Info */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
-
-              <h1 className="text-3xl font-extrabold  tracking-wider flex items-center gap-2">
+              <h1 className="text-3xl font-extrabold tracking-wider flex items-center gap-2">
           FLIGHT <span className="bg-zinc-100 font-mono text-zinc-700 px-2 py-1 rounded-lg border border-zinc-200">{flight}</span>
               </h1>
             </div>
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex items-center gap-3 mt-1 line-clamp-1">
               <Badge color={typeof status === "string" && status.includes("Connection") ? "green" : "yellow"}>{status}</Badge>
-              <Badge color="gray">{members.length } Member{members.length ? "s" : ""}</Badge>
+              <Badge color="gray">{members.length} Member{members.length !== 1 ? "s" : ""}</Badge>
             </div>
-         
+          
           </div>
 
           {/* Right: Owner, Members, Share */}
           <div className="flex flex-col md:flex-row items-center gap-8 mt-6 md:mt-0">
-           
+            
+            
             {/* Share Button */}
             <div className="flex flex-col items-center">
               <button
@@ -127,17 +127,25 @@ export default function RoomPage() {
           fileTrans.handleFileSelect({ target: { files } } as any);
               }}
             >
-              <div className="flex flex-col items-center gap-2">
-          <Folder className="w-8 h-8 text-orange-500" />
+              <div className="flex flex-col items-center gap-2 p-2">
+          <Folder className="w-8 h-8 hidden md:inline text-orange-500" />
           <span className="font-semibold text-zinc-900">Drag & Drop files or folders here</span>
           <span className="text-xs text-zinc-500">or</span>
           <div className="flex gap-2">
             <label className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg px-3 py-2 cursor-pointer flex items-center gap-2">
-              <File className="w-4 h-4" /> Select Files
+              <File className="w-4 h-4" /> 
+              <span className="hidden md:inline">
+              Select
+              </span>
+               Files
               <input type="file" multiple hidden onChange={fileTrans.handleFileSelect} />
             </label>
             <label className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg px-3 py-2 cursor-pointer flex items-center gap-2">
-              <Folder className="w-4 h-4" /> Select Folder
+              <Folder className="w-4 h-4" /> 
+              <span className="hidden md:inline">
+              Select 
+              </span>
+              Folder
               <input
                 type="file"
                 multiple
@@ -202,7 +210,7 @@ export default function RoomPage() {
           <section className="flex-1 bg-white rounded-2xl shadow-lg p-6 ">
             <h2 className="text-xl font-semibold text-zinc-900 mb-4">Overall Metrics</h2>
             <div className="grid grid-cols-2 md:grid-cols-2 gap-6 text-sm text-zinc-700">
-              <Metric label="Sent" value={`${(fileTrans.meta.totalSent / 1e9).toFixed(2)} GB`} />
+              <Metric label="Sent" value={`${(fileTrans.meta.totalSent / 1e9).toFixed(2)} GB` } />
               <Metric label="Received" value={`${(fileTrans.meta.totalReceived / 1e9).toFixed(2)} GB`} />
               <Metric
                 label="Speed"
@@ -421,11 +429,11 @@ function QueueTray(prop: QueueTrayProp) {
 
 
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value }: { label: string; value: string; }) {
   return (
-    <div className="flex flex-col items-start bg-zinc-100 rounded-lg px-4 py-3 shadow-sm min-w-[90px]">
-      <span className="text-zinc-500 text-xs mb-1">{label}</span>
-      <span className="text-zinc-900 font-bold text-lg">{value}</span>
+    <div className={`flex flex-col items-center gap-2 text-orange-600 outline-1 p-1 shadow bg-zinc-100 rounded-2xl outline-zinc-400`}>
+      <span className="text-xs text-zinc-500">{label}</span>
+      <span className={`font-mono text-lg text-orange-600`}>{value}</span>
     </div>
   );
 }
