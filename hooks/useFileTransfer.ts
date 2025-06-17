@@ -125,36 +125,6 @@ export function useFileTransfer(
 }
 
 
-  function concat(a: Uint8Array, b: Uint8Array) {
-    const c = new Uint8Array(a.length + b.length);
-    c.set(a, 0);
-    c.set(b, a.length);
-    return c;
-  }
-
-function createPacket( transferId  : string  , chunk : Uint8Array ){
-
-    const transferIdBuf = new TextEncoder().encode(transferId);
-    const headerSize = 4 + transferIdBuf.length + 4;
-    const packet = new ArrayBuffer(headerSize + chunk.byteLength);
-    const view = new DataView(packet);
-
-    let offset = 0 ; 
-    view.setUint32( offset , transferIdBuf.length);
-    offset += 4;
-
-    new Uint8Array(packet , offset , transferIdBuf.length).set(transferIdBuf);
-    offset += transferIdBuf.length;
-
-    view.setUint32(offset, chunk.byteLength);
-    offset += 4;
-
-    new Uint8Array(packet , offset).set(new Uint8Array(chunk));
-
-    return packet;
-
-  }
-
   // SEND 
 const sendFile = useCallback(
   async ({ file, transferId, directoryPath }: Transfer) => {
@@ -203,8 +173,8 @@ const sendFile = useCallback(
       }
       if (dataChannel.readyState !== "open") throw new Error("Connection closed");
 
-     const packet = createPacket(transferId, chunk);
-      dataChannel.send(packet);
+     dataChannel.send(JSON.stringify({ type: "chunk", transferId, size: chunk.length }));
+     dataChannel.send(chunk.buffer);
 
       // Progress track
       sent += chunk.length;
@@ -497,12 +467,16 @@ async function ProcessRecQue(transferId: string) {
 
       // Binary data
       
-      const { transferId , chunk } =  unpack(event.data);
+      const transferId = currentReceivingIdRef.current;
+      if (!transferId) {
+        console.warn("No transferId set for incoming chunk");
+        return;
+      }
 
       const rec = incoming.current[transferId];
       if(!rec) return;
 
-      rec.queue.push(chunk);
+      rec.queue.push(event.data);
       if (!rec.writing) {
         rec.writing = true;
         ProcessRecQue(transferId);
