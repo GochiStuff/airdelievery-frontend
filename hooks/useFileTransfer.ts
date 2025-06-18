@@ -55,7 +55,7 @@ export function useFileTransfer(
 
   // Incoming streams
   const incoming = useRef<
-    Record<string, { size: number; received: number;writing : boolean;  queue: ArrayBuffer[], lastProgressUpdate : number ; writer: WritableStreamDefaultWriter }>
+    Record<string, { size: number; received: number;writing : boolean;  queue: ArrayBuffer[], lastProgressUpdate : number ; writer: WritableStreamDefaultWriter  | null}>
   >({});
   const currentReceivingIdRef = useRef<string | null>(null);
 
@@ -285,6 +285,7 @@ async function ProcessRecQue(transferId: string) {
       if (!chunk) continue;
 
       try {
+        if(!rec.writer) return
         await rec.writer.write(new Uint8Array(chunk));
         rec.received += chunk.byteLength;
 
@@ -313,6 +314,7 @@ async function ProcessRecQue(transferId: string) {
       } catch (err) {
         console.error("Writer error:", err);
         try {
+            if(!rec.writer) return
           await rec.writer.abort?.();
         } catch {}
         delete incoming.current[transferId];
@@ -327,8 +329,12 @@ async function ProcessRecQue(transferId: string) {
 
     if (rec.received >= rec.size) {
       try {
+        if(!rec.writer) return
         await rec.writer.close();
       } catch {}
+      rec.writing = false;
+      rec.writer = null; 
+      currentReceivingIdRef.current = null;
       delete incoming.current[transferId];
       setRecvQueue((rq) =>
         rq.map((r) =>
@@ -337,10 +343,10 @@ async function ProcessRecQue(transferId: string) {
             : r
         )
       );
-      currentReceivingIdRef.current = null;
+
+      await new Promise(res => setTimeout(res, 50)); 
     }
   } finally {
-
     rec.writing = false;
   }
 }
@@ -372,13 +378,9 @@ async function ProcessRecQue(transferId: string) {
 
           let writer: WritableStreamDefaultWriter;
           let chunks: Uint8Array[] | undefined = undefined;
-          const isMobile = /iP(ad|hone|od)|Android/.test(navigator.userAgent);
-          const streamSaverSupported = typeof streamSaver !== 'undefined' && typeof streamSaver.createWriteStream === 'function';
-          console.log("INIT received", { transferId, directoryPath, size, isMobile, streamSaverSupported });
 
-
-            if ( !streamSaverSupported || isMobile || size < MAX_RAM_SIZE){
-              console.log("USING RAM")
+            if ( size < MAX_RAM_SIZE){
+              
               chunks = [];
               // writing own ram writer 
               writer = {
@@ -468,6 +470,7 @@ async function ProcessRecQue(transferId: string) {
         if (type === "cancel") {
           if (incoming.current[transferId]) {
             try {
+              if(!incoming.current[transferId].writer) return
               incoming.current[transferId].writer.abort();
             } catch {}
             delete incoming.current[transferId];
@@ -633,6 +636,7 @@ async function ProcessRecQue(transferId: string) {
   const cancelReceive = useCallback((transferId: string) => {
     const rec = incoming.current[transferId];
     if (rec) {
+          if(!rec.writer) return
       try { rec.writer.abort(); } catch {}
       delete incoming.current[transferId];
     }

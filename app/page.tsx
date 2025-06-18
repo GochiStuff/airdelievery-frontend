@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useSocket } from "@/hooks/socketContext";
 import { useRouter } from "next/navigation";
 import AboutCard from "@/components/aboutCard";
+import { useInvitationToJoin } from "@/hooks/invitationToJoin";
 
 export default function MainPage() {
     const router = useRouter();
     const { socket } = useSocket();
 
     const [flightCode, setFlightCode] = useState<string>("");
+    const {user} = useSocket();
 
     const handleCreate = () => {
         if (!socket) return;
@@ -22,12 +24,16 @@ export default function MainPage() {
         if (flightCode.trim()) {
             router.push(`/flight/${flightCode.trim()}`);
         }
+
     };
+
+    const invitationPop = useInvitationToJoin();
 
     return(
         <div
             className="relative flex  mb-10 flex-col md:flex-row items-center max-w-9xl mx-auto  justify-around min-h-screen overflow-hidden"
         >
+            {invitationPop}
 
             {/* Tagline background */}
                 <div className="relative w-full md:w-auto">
@@ -49,6 +55,7 @@ export default function MainPage() {
                 <span className="uppercase tracking-widest text-xs font-bold text-zinc-100 opacity-70">Airdelivery.io</span>
                 <h2 className="text-3xl font-extrabold tracking-tight text-zinc-100 mt-2 mb-1">Boarding Pass</h2>
                 <span className="text-sm text-zinc-100 opacity-70">Your file transfer ticket</span>
+             
             </div>
 
             {/* File and Folder Section */}
@@ -105,11 +112,14 @@ export default function MainPage() {
                 Enter your flight code to receive
             </p>
 
+               <h3 className="text-lg  absolute bottom-5 right-8 font-extrabold tracking-tight text-zinc-100 mt-2 -mb-3">- {user.name}</h3>
+
         </div>
 
             <div className="   bg-zinc-900 bg-opacity-90 rounded-2xl shadow-2xl flex flex-col p-6 text-zinc-50">
                 {/* Info button */}
                 <div className="flex justify-end">
+    
                     <AboutCard/>
                 </div>
                 <h2 className="text-3xl font-bold mb-2">Awesome</h2>
