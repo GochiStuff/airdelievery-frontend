@@ -37,32 +37,36 @@ export function useWebRTC(
     setStatus(friendly);
   }
 
+
   function createPeer(id: string) {
+    const TURN_USERNAME = process.env.NEXT_PUBLIC_TURN_USERNAME || "";
+    const TURN_CREDENTIAL = process.env.NEXT_PUBLIC_TURN_CREDENTIAL || "";
+
     const pc = new RTCPeerConnection({ iceServers: [
       {
         urls: "stun:stun.relay.metered.ca:80",
       },
       {
         urls: "turn:global.relay.metered.ca:80",
-        username: "73e1686f8989c37fbae33ea2",
-        credential: "22EgGTMEnQy1fL2r",
+        username: TURN_USERNAME,
+        credential: TURN_CREDENTIAL,
       },
       {
         urls: "turn:global.relay.metered.ca:80?transport=tcp",
-        username: "73e1686f8989c37fbae33ea2",
-        credential: "22EgGTMEnQy1fL2r",
+        username: TURN_USERNAME,
+        credential: TURN_CREDENTIAL,
       },
       {
         urls: "turn:global.relay.metered.ca:443",
-        username: "73e1686f8989c37fbae33ea2",
-        credential: "22EgGTMEnQy1fL2r",
+        username: TURN_USERNAME,
+        credential: TURN_CREDENTIAL,
       },
       {
         urls: "turns:global.relay.metered.ca:443?transport=tcp",
-        username: "73e1686f8989c37fbae33ea2",
-        credential: "22EgGTMEnQy1fL2r",
+        username: TURN_USERNAME,
+        credential: TURN_CREDENTIAL,
       },
-  ],});
+    ]});
 
     pc.ondatachannel = e => {
       dataChannel.current = e.channel;
