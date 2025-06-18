@@ -253,6 +253,9 @@ export default function RoomPage() {
                 <li>
                   <strong>Note:</strong> Avoid refreshing after connection is established.
                 </li>
+                <li>
+                  <strong className="text-red-400">IMP:</strong> Use Opera (suggested) or different browser if site not working.
+                </li>
               </ul>
             </div>
             <div className="flex gap-3">
@@ -373,6 +376,7 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
           </p>
           <ul className="list-disc list-inside text-sm pl-2 mt-2">
             <li>Use the manual download buttons below each file.</li>
+            <li className="text-orange-600">Use Opera (suggested) or different browser if site not working.</li>
             <li>For small multiple files, upload them as a ZIP archive.</li>
             <li>Try new session.</li>
             <li>Large files (~500MB+) are streamed directly to disk.</li>
