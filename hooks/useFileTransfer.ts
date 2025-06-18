@@ -7,7 +7,7 @@ import streamSaver from "streamsaver";
 import { flattenFileList } from "@/utils/flattenFilelist";
 import { buffer } from "stream/consumers";
 
-type TransferStatus = "queued" | "sending" | "paused" | "done" | "error" | "canceled" | "receiving" ;
+type TransferStatus = "queued" | "sending" | "paused" | "done" | "error" | "canceled" | "receiving" | "processing" ;
 
 type Transfer = {
   file: File;
@@ -46,7 +46,7 @@ export function useFileTransfer(
   });
 
   
-  const MAX_RAM_SIZE = 1024 * 1024 * 1024;
+  const MAX_RAM_SIZE = 200 * 1024 * 1024;// 200 MB
   const peerMax = (dataChannel as any)?.maxMessageSize || 256 * 1024;
   const CHUNK_SIZE = Math.min(256 * 1024, Math.floor(peerMax * 0.9));
   const BUFFER_THRESHOLD = CHUNK_SIZE * 8;
@@ -78,7 +78,8 @@ export function useFileTransfer(
     done: "Completed",
     error: "Failed",
     canceled: "Canceled",
-    receiving: "Receiving"
+    receiving: "Receiving",
+    processing : "Processing"
   };
 
   const handleFileSelect = useCallback(
@@ -380,13 +381,33 @@ async function ProcessRecQue(transferId: string) {
               writer = {
                 write: (chunk: Uint8Array) => { chunks!.push(chunk); return Promise.resolve(); },
                 close: () => {
-                  const totalLength = chunks!.reduce((sum, c) => sum + c.length, 0);
-                  const all = new Uint8Array(totalLength);
-                  let offset = 0;
-                  for (const c of chunks!) {
-                    all.set(c, offset);
-                    offset += c.length;
-                  }
+                    setRecvQueue((rq) =>
+                      rq.map((r) =>
+                      r.transferId === transferId
+                        ? { ...r, status: "processing", progress: 0 }
+                        : r
+                      )
+                    );
+                    const totalLength = chunks!.reduce((sum, c) => sum + c.length, 0);
+                    const all = new Uint8Array(totalLength);
+                    let offset = 0;
+                    const chunkCount = chunks!.length;
+                    const progressStep = Math.max(1, Math.floor(chunkCount / 100));
+                    let processed = 0;
+                    for (const c of chunks!) {
+                      all.set(c, offset);
+                      offset += c.length;
+                      processed++;
+                      if (processed % progressStep === 0 || processed === chunkCount) {
+                      setRecvQueue((rq) =>
+                        rq.map((r) =>
+                        r.transferId === transferId && r.status === "processing"
+                          ? { ...r, progress: Math.round((processed / chunkCount) * 100) }
+                          : r
+                        )
+                      );
+                      }
+                    }
 
                   const blob = new Blob([all]);
                   const url = URL.createObjectURL(blob);
@@ -398,7 +419,7 @@ async function ProcessRecQue(transferId: string) {
                   setTimeout(() => {
                     URL.revokeObjectURL(url);
                     a.remove();
-                  }, 200);
+                  }, 1000);
                   return Promise.resolve();
                 },
                 abort: () => { chunks = undefined; return Promise.resolve(); },
