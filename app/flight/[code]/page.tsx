@@ -12,16 +12,22 @@ import {
   Play,
   Pause,
   RefreshCwIcon,
+  DownloadIcon,
+  Download,
+  LucideFolderOpen,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useFileTransfer } from "@/hooks/useFileTransfer";
 import { useSocket } from "@/hooks/socketContext";
+import { Switch } from "@/components/ui/switch";
 
 export default function RoomPage() {
   const { code } = useParams();
   const flight = typeof code === "string" ? code : "";
   const [showQR, setShowQR] = useState(false);
+
+
   const [isSpinning, setIsSpinning] = useState(false);
 
   // WebRTC and file transfer hooks
@@ -211,7 +217,7 @@ export default function RoomPage() {
          {/* Queue Preview under Upload */}
             <div className="mt-6 w-full space-y-6">
               <QueueTray title="Sending Queue" items={fileTrans.queue} pauseTransfer={fileTrans.pauseTransfer} resumeTransfer={fileTrans.resumeTransfer} cancelTransfer={fileTrans.cancelTransfer} reciver={false} />
-              <QueueTray title="Receiver Queue" items={fileTrans.recvQueue} cancelTransfer={fileTrans.cancelTransfer} reciver={true} />
+              <QueueTray title="Receiver Queue"  setAutoDownload={fileTrans.setAutoDownload} autoDownload={fileTrans.autoDownload} openfile={fileTrans.openFile} fileDownload={fileTrans.downloadFile} items={fileTrans.recvQueue} cancelTransfer={fileTrans.cancelTransfer} reciver={true} />
             </div>
 
         {/* Metrics and Info */}
@@ -222,7 +228,7 @@ export default function RoomPage() {
               <Metric label="Sent" value={`${(fileTrans.meta.totalSent / 1e9).toFixed(2)} GB`} />
               <Metric label="Received" value={`${(fileTrans.meta.totalReceived / 1e9).toFixed(2)} GB`} />
               <Metric
-                label="Speed"
+                label="Sending speed"
                 value={
                   fileTrans.meta.speedBps >= 1048576
                     ? `${(fileTrans.meta.speedBps / 1048576).toFixed(2)} MB/s`
@@ -305,11 +311,16 @@ interface QueueTrayProp {
   items: any[];
   reciver?: boolean;
   pauseTransfer?: (id: string) => void;
+  fileDownload?: (file: { transferId: string ; blobUrl: string; directoryPath: string }  ) => void;
+  openfile ?: (url : string ) => void;
+  allfileDownload?: () => void;
+  autoDownload ?: boolean;
+  setAutoDownload?: ( b : boolean) => void ;
   resumeTransfer?: (id: string) => void;
   cancelTransfer?: (id: string) => void;
 }
 
-function QueueTray({ title, items, reciver = false, pauseTransfer, resumeTransfer, cancelTransfer }: QueueTrayProp) {
+function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload , autoDownload , setAutoDownload, openfile , resumeTransfer, cancelTransfer }: QueueTrayProp) {
   const statusLabels: Record<string, string> = {
     queued: "Queued",
     sending: "Sending",
@@ -319,9 +330,55 @@ function QueueTray({ title, items, reciver = false, pauseTransfer, resumeTransfe
     canceled: "Canceled",
   };
 
+  const [show, setShow] = useState(false);
+
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-4">
+    <div className="bg-white relative rounded-2xl shadow-sm p-4">
       <h3 className="text-lg font-semibold mb-4">{title}</h3>
+    { reciver && 
+    <div className="absolute top-3 align-text-top right-5 flex gap-2">
+  {/*  DOWNLOAD ALL TODO  */}
+    <button className=" text-xs font-bold text-zinc-500 text-mono " onClick={() => setShow(true)}>Auto Download / not working ?</button>
+    </div>
+    }
+       {show && (
+        <div className="absolute top-8 animate-fadeIn right-2 z-50 max-w-102 rounded-xl border bg-white p-4 shadow-xl dark:bg-zinc-900 dark:text-white">
+          <div className="flex absolute top-3 right-3 items-center justify-between mb-3">
+            <button onClick={() => setShow(false)}>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 mb-4">
+             <Switch
+              checked={autoDownload}
+              onCheckedChange={setAutoDownload}
+              id="auto-download-toggle"
+            />
+            <label htmlFor="auto-download-toggle" className="text-sm">
+              Auto-download
+            </label>
+          </div>
+
+          {!autoDownload && (
+            <p className="text-sm mb-2 text-orange-500">
+              Auto-download is off. Please use the Download buttons shown next to files.
+            </p>
+          )}
+
+          <p className="text-sm leading-snug">
+            Some browsers block multiple automatic downloads for security reasons.
+            If that happens:
+          </p>
+          <ul className="list-disc list-inside text-sm pl-2 mt-2">
+            <li>Use the manual download buttons below each file.</li>
+            <li>For small multiple files, upload them as a ZIP archive.</li>
+            <li>Try new session.</li>
+            <li>Large files (~500MB+) are streamed directly to disk.</li>
+          </ul>
+        </div>
+      )}
       <div className="flex gap-4 overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-300 pb-2">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center w-full text-zinc-400 py-8">
@@ -356,15 +413,47 @@ function QueueTray({ title, items, reciver = false, pauseTransfer, resumeTransfe
               </div>
               <div className="mt-4 flex justify-center gap-3">
                 {reciver ? (
-                  item.status !== "done" && item.status !== "canceled" && (
+                  <>
+                  {item.status !== "done" && item.status !== "canceled" && (
                     <button
                       className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 transition"
                       onClick={() => cancelTransfer && cancelTransfer(item.transferId)}
                       title="Cancel"
-                    >
+                      >
                       <X className="w-4 h-4" />
                     </button>
-                  )
+                  )}
+
+                  { item.status === "done" && item.status !== "canceled"  && item.downloaded ? 
+                  
+                  <p className="text-xs font-bold text-zinc-500 text-mono">
+                     Already downloaded or is in disk.
+                  </p>
+                  
+                  
+                  : <>
+                  {item.status === "done" && item.status !== "canceled" && !autoDownload && item.blobUrl  &&  (
+                    <button
+                      className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-500 border border-blue-200 transition"
+                      //@ts-ignore
+                      onClick={() => fileDownload(item) }
+                      title="Download"
+                      >
+                      <Download className="w-4 h-4" />
+                    </button>
+                  )}
+                  {item.status === "done" && item.status !== "canceled" && !autoDownload && item.blobUrl  &&  (
+                    <button
+                    className="p-2 rounded-full bg-yellow-50 hover:bg-yellow-100 text-yellow-500 border border-yellow-200 transition"
+                    //@ts-ignore
+                    onClick={() => openfile(item.blobUrl) }
+                    title="open"
+                    >
+                      <Play className="w-4 h-4" />
+                    </button>
+                  )}
+                  </>}
+                      </>
                 ) : (
                   <>
                     {item.status === "paused" && (

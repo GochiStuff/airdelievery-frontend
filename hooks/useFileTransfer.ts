@@ -25,6 +25,8 @@ type RecvTransfer = {
   size: number;
   received: number;
   progress: number;
+  blobUrl?: string;
+  downloaded?: boolean;
   status: TransferStatus;
 };
 
@@ -33,6 +35,10 @@ type Meta = {
   totalReceived: number;
   speedBps: number;
 };
+
+
+
+
 
 export function useFileTransfer(
   dataChannel: RTCDataChannel | null
@@ -59,6 +65,7 @@ export function useFileTransfer(
   >({});
   const currentReceivingIdRef = useRef<string | null>(null);
 
+
   // Queue
   const pq = useRef(new PQueue({ concurrency: 1 }));
 
@@ -81,6 +88,78 @@ export function useFileTransfer(
     canceled: "Canceled",
     receiving: "Receiving"
   };
+
+function downloadFile(
+  file: { transferId: string; blobUrl: string; directoryPath: string }
+) {
+  const a = document.createElement("a");
+  a.href = file.blobUrl;
+  a.download = file.directoryPath;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(file.blobUrl);
+
+    setRecvQueue((prev) =>
+      prev.map((f) =>
+        f.transferId === file.transferId ? { ...f, downloaded: true } : f
+      )
+    );
+    
+  }, 500);
+}
+
+
+function openFile(blobUrl: string) {
+  window.open(blobUrl, "_blank", "noopener,noreferrer");
+}
+
+
+
+
+async function downloadAll() {
+  for (const file of recvQueue) {
+    if (
+      file.status === "done" &&
+      file.blobUrl &&
+      !file.downloaded
+    ) {
+      // Trigger download
+      const a = document.createElement("a");
+      a.href = file.blobUrl;
+      a.download = file.directoryPath;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      await new Promise((res) => setTimeout(res, 100));
+    }
+  }
+}
+
+
+const [autoDownload, setAutoDownload] = useState(false);
+
+function tryAutoDownload(
+  url: string,
+  filename: string
+) {
+  if(autoDownload){
+
+    const a = document.createElement("a");
+    a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => {
+    URL.revokeObjectURL(url);          
+  }, 800);
+  }
+}
+
 
   const handleFileSelect = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
@@ -270,6 +349,7 @@ function unpack(buffer : ArrayBuffer ){
   return { transferId, chunk };
 }
 
+
 async function ProcessRecQue(transferId: string) {
   const rec = incoming.current[transferId];
 
@@ -378,6 +458,7 @@ async function ProcessRecQue(transferId: string) {
 
           let writer: WritableStreamDefaultWriter;
           let chunks: Uint8Array[] | undefined = undefined;
+          let downloaded = false;
 
             if ( size < MAX_RAM_SIZE){
               
@@ -396,16 +477,21 @@ async function ProcessRecQue(transferId: string) {
 
                   const blob = new Blob([all]);
                   const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = directoryPath;
-                  document.body.appendChild(a);
-                  a.click();
-                  setTimeout(() => {
-                    URL.revokeObjectURL(url);
-                    a.remove();
-                  }, 200);
-                  return Promise.resolve();
+                  setRecvQueue(rq =>
+                  rq.map(r =>
+                    r.transferId === transferId
+                      ? { ...r, blobUrl : url }
+                      : r
+                  )
+                );
+
+            
+                tryAutoDownload(url, directoryPath);
+
+                if( chunks?.length ) chunks.length = 0;
+
+                return Promise.resolve();
+
                 },
                 abort: () => { chunks = undefined; return Promise.resolve(); },
                 // Required properties for WritableStreamDefaultWriter
@@ -418,6 +504,8 @@ async function ProcessRecQue(transferId: string) {
               
             }else{
               const stream = streamSaver.createWriteStream(directoryPath, { size });
+
+              downloaded = true;
               writer = stream.getWriter();
             }
             incoming.current[transferId] = {
@@ -431,7 +519,7 @@ async function ProcessRecQue(transferId: string) {
     
             setRecvQueue((rq) => [
               ...rq,
-              { transferId, directoryPath, size, received: 0, progress: 0, status: "receiving" }
+              { transferId, directoryPath, blobUrl : "", size, downloaded , received: 0, progress: 0, status: "receiving" }
             ]);
           } catch (err) {
             console.error("Error creating write stream:", err);
@@ -661,8 +749,13 @@ async function ProcessRecQue(transferId: string) {
 
   return {
     queue: userQueue,
+    downloadAll,
+    downloadFile,
+    openFile,
     recvQueue,
     meta,
+    setAutoDownload ,
+    autoDownload,
     handleFileSelect,
     pauseTransfer,
     resumeTransfer,
