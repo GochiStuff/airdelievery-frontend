@@ -5,41 +5,43 @@ const aboutInfo = [
     {
         title: "What is Air Delivery?",
         content:
-            "Air Delivery is a free, powerful, clutter-free web app for super fast and private file sharing. It uses peer-to-peer (P2P) technology to send files directly between devices — no uploads to any server, no middlemen, just raw speed and privacy.",
+            "Air Delivery is a free, streamlined web app for fast, private file sharing. It leverages peer-to-peer (P2P) technology to transfer files directly between devices—no uploads to external servers, no intermediaries, just speed and privacy.",
     },
     {
-        title: "How to use it?",
+        title: "How do I use it?",
         content: (
             <>
-                <strong>📡 On the same Wi-Fi / local network</strong>
+                <strong>On the same Wi-Fi or local network</strong>
                 <br />
-                Open Air Delivery on both devices. Drag and drop your files directly onto the recipient’s avatar or click their avatar and pick the files you want to send. The recipient will be prompted to accept before the transfer starts.
+                Open Air Delivery on both devices connected to the same network. Devices will automatically detect each other. Simply drag and drop your files to start a direct, high-speed transfer.
                 <br /><br />
                 <strong>Across different networks</strong>
                 <br />
-                Click the <b>+</b> button on the top right and follow the instructions to connect. This will establish a secure WebRTC connection even across the internet.
+                Please note: Due to current TURN server limitations, transfers across different networks may be unreliable or slow.
+                <br />
+                Connect with someone outside your network using a <b>Flight Code</b>, <b>QR code</b>, or <b>link</b>. Click the <b>+</b> button at the top right and follow the prompts to establish a secure connection, then send files as usual.
             </>
         ),
     },
     {
         title: "Security & Privacy",
         content:
-            "Air Delivery uses end-to-end encrypted peer-to-peer (P2P) connections powered by WebRTC. No file data or metadata is stored or sent through any server. Your files go **only** from your device to the recipient’s — completely private and secure.",
+            "Air Delivery uses end-to-end encrypted P2P connections powered by WebRTC. No file data or metadata is stored or routed through any server. Your files are transferred directly between devices—ensuring complete privacy and security.",
     },
     {
         title: "Development Status",
         content:
-            "This is the **initial release** of Air Delivery — you may encounter minor bugs, and many powerful features are coming soon. It’s actively being developed by Yash Jangid.",
+            "This is the initial release of Air Delivery. You may encounter minor bugs, and new features are actively being developed. Your feedback is welcome and helps improve the platform.",
     },
     {
-        title: "Open Source?",
+        title: "Is it Open Source?",
         content:
-            "Air Delivery is **not open source** at the moment. It’s a custom-built platform created with care to give you the best P2P file-sharing experience on the web.",
+            "Air Delivery is currently not open source. It’s a custom-built platform designed to provide the best P2P file-sharing experience on the web.",
     },
     {
         title: "Feedback & Support",
         content:
-            "Found a bug or have a suggestion? Feel free to contact the developer — your feedback helps shape the future of Air Delivery.",
+            "Have a suggestion or found a bug? Reach out to the developer—your input helps shape the future of Air Delivery.",
     },
 ];
 
@@ -81,7 +83,7 @@ export default function AboutCard() {
                             Share it with friends and use it whenever you want!
                         </p>
                         <p className="text-sm text-zinc-600 mb-6">
-                            ⚠️ This is an early release by <strong>Yash Jangid</strong>. You might run into minor bugs — many awesome features are on the way! 
+                            ⚠️ This is an early release. You might run into minor bugs — many awesome features are on the way! 
                         </p>
                         <div className="text-base text-zinc-800">
                             {aboutInfo.map((section) => (
