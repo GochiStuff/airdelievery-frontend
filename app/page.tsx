@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSocket } from "@/hooks/socketContext";
 import { useRouter } from "next/navigation";
 import AboutCard from "@/components/aboutCard";
@@ -19,6 +19,10 @@ export default function MainPage() {
             router.push(`/flight/${response.code}`);
         });
     };
+
+     const [ username , setUsername ] = useState<string>("");
+
+     useEffect(()=> setUsername(user.name ?? ""), [user]);
 
     const handleJoin = () => {
         if (flightCode.trim()) {
@@ -112,7 +116,7 @@ export default function MainPage() {
                 Enter your flight code to receive
             </p>
 
-               <h3 className="text-lg  absolute bottom-5 right-8 font-extrabold tracking-tight text-zinc-100 mt-2 -mb-3">- {user.name}</h3>
+               <h3 className="text-lg  absolute bottom-5 right-8 font-extrabold tracking-tight text-zinc-100 mt-2 -mb-3">- {username}</h3>
 
         </div>
 
