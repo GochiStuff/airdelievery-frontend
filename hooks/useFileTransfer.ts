@@ -6,8 +6,9 @@ import pRetry from "p-retry";
 import streamSaver from "streamsaver";
 import { flattenFileList } from "@/utils/flattenFilelist";
 import { buffer } from "stream/consumers";
+import { v4 } from "uuid";
 
-type TransferStatus = "queued" | "sending" | "paused" | "done" | "error" | "canceled" | "receiving" | "processing" ;
+type TransferStatus = "queued" | "sending" | "paused" | "done" | "error" | "canceled" | "receiving" ;
 
 type Transfer = {
   file: File;
@@ -46,7 +47,7 @@ export function useFileTransfer(
   });
 
   
-  const MAX_RAM_SIZE = 200 * 1024 * 1024;// 200 MB
+  const MAX_RAM_SIZE = 500 * 1024 * 1024; // 500 MB GB 
   const peerMax = (dataChannel as any)?.maxMessageSize || 256 * 1024;
   const CHUNK_SIZE = Math.min(256 * 1024, Math.floor(peerMax * 0.9));
   const BUFFER_THRESHOLD = CHUNK_SIZE * 8;
@@ -78,8 +79,7 @@ export function useFileTransfer(
     done: "Completed",
     error: "Failed",
     canceled: "Canceled",
-    receiving: "Receiving",
-    processing : "Processing"
+    receiving: "Receiving"
   };
 
   const handleFileSelect = useCallback(
@@ -94,7 +94,7 @@ export function useFileTransfer(
             return !existingPaths.has(path);
           })
           .map((file) => {
-            const id = crypto.randomUUID();
+            const id = v4();
             transferControls.current[id] = { paused: false, canceled: false };
             return {
               file,
@@ -372,42 +372,25 @@ async function ProcessRecQue(transferId: string) {
 
           let writer: WritableStreamDefaultWriter;
           let chunks: Uint8Array[] | undefined = undefined;
-          
+          const isMobile = /iP(ad|hone|od)|Android/.test(navigator.userAgent);
+          const streamSaverSupported = typeof streamSaver !== 'undefined' && typeof streamSaver.createWriteStream === 'function';
+          console.log("INIT received", { transferId, directoryPath, size, isMobile, streamSaverSupported });
 
-            if ( size < MAX_RAM_SIZE){
+
+            if ( !streamSaverSupported || isMobile || size < MAX_RAM_SIZE){
               console.log("USING RAM")
               chunks = [];
               // writing own ram writer 
               writer = {
                 write: (chunk: Uint8Array) => { chunks!.push(chunk); return Promise.resolve(); },
                 close: () => {
-                    setRecvQueue((rq) =>
-                      rq.map((r) =>
-                      r.transferId === transferId
-                        ? { ...r, status: "processing", progress: 0 }
-                        : r
-                      )
-                    );
-                    const totalLength = chunks!.reduce((sum, c) => sum + c.length, 0);
-                    const all = new Uint8Array(totalLength);
-                    let offset = 0;
-                    const chunkCount = chunks!.length;
-                    const progressStep = Math.max(1, Math.floor(chunkCount / 100));
-                    let processed = 0;
-                    for (const c of chunks!) {
-                      all.set(c, offset);
-                      offset += c.length;
-                      processed++;
-                      if (processed % progressStep === 0 || processed === chunkCount) {
-                      setRecvQueue((rq) =>
-                        rq.map((r) =>
-                        r.transferId === transferId && r.status === "processing"
-                          ? { ...r, progress: Math.round((processed / chunkCount) * 100) }
-                          : r
-                        )
-                      );
-                      }
-                    }
+                  const totalLength = chunks!.reduce((sum, c) => sum + c.length, 0);
+                  const all = new Uint8Array(totalLength);
+                  let offset = 0;
+                  for (const c of chunks!) {
+                    all.set(c, offset);
+                    offset += c.length;
+                  }
 
                   const blob = new Blob([all]);
                   const url = URL.createObjectURL(blob);
@@ -419,7 +402,7 @@ async function ProcessRecQue(transferId: string) {
                   setTimeout(() => {
                     URL.revokeObjectURL(url);
                     a.remove();
-                  }, 1000);
+                  }, 200);
                   return Promise.resolve();
                 },
                 abort: () => { chunks = undefined; return Promise.resolve(); },

@@ -12,6 +12,7 @@
     "@vercel/analytics": "^1.5.0",
     "express": "^5.1.0",
     "fflate": "^0.8.2",
+    "idb-keyval": "^6.2.2",
     "lucide-react": "^0.515.0",
     "nanoid": "^5.1.5",
     "next": "15.3.3",
@@ -24,7 +25,8 @@
     "recharts": "^2.15.3",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
-    "streamsaver": "^2.0.6"
+    "streamsaver": "^2.0.6",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
