@@ -70,7 +70,7 @@ export default function RoomPage() {
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 hover:from-orange-600 hover:to-orange-500 text-white font-semibold shadow-lg transition"
               >
           <Share2 className="w-5 h-5" />
-          <span>Share</span>
+          <span>Invite</span>
               </button>
               <span className="text-xs text-zinc-500 mt-1">Show QR / Code</span>
             </div>

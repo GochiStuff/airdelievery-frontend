@@ -1,21 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { useSocket } from "@/hooks/socketContext";
 import { useRouter } from "next/navigation";
+import { resolve } from "path";
 
 type Candidate = RTCIceCandidateInit;
 
 function userMessage(msg: string) {
-  // Map technical messages to user-friendly ones
-  if (msg.includes("DataChannel opened")) return "Connection established. Ready to transfer files.";
-  if (msg.includes("Offer sent")) return "Connecting to the other device...";
-  if (msg.includes("Answer sent")) return "Connected to the other device.";
-  if (msg.includes("Remote description set")) return "Connection secured.";
-  if (msg.includes("Added ICE candidate")) return "Connection improved.";
-  if (msg.includes("Buffered ICE candidate")) return "Setting up connection...";
-  if (msg.includes("Joined signaling")) return "Joined the room. Waiting for others...";
-  if (msg.includes("Failed to join")) return "Could not join the room. Please check the code.";
-  if (msg.includes("Invalid room code")) return "Please enter a valid room code.";
-   return msg;
+  if (msg.includes("DataChannel opened")) return "Connection established";
+  if (msg.includes("Offer sent")) return "Sending offer...";
+  if (msg.includes("Answer sent")) return "Offer accepted...";
+  if (msg.includes("Remote description set")) return "Description set";
+  if (msg.includes("Added ICE candidate")) return "Connection improved";
+  if (msg.includes("Buffered ICE candidate")) return "Setting up...";
+  if (msg.includes("Joined signaling")) return "Joined room, waiting";
+  if (msg.includes("Failed to join")) return "Failed to join room";
+  if (msg.includes("Invalid room code")) return "Invalid room code";
+  if (msg.includes("Failed to add ICE candidate")) return "Connection Failed"
+  return msg;
 }
 
 type Member  = {
@@ -49,37 +50,24 @@ export function useWebRTC(
     const TURN_USERNAME = process.env.NEXT_PUBLIC_TURN_USERNAME || "";
     const TURN_CREDENTIAL = process.env.NEXT_PUBLIC_TURN_CREDENTIAL || "";
 
-    const pc = new RTCPeerConnection({ iceServers: [
-      {
-        urls: "stun:stun.relay.metered.ca:80",
-      },
-      {
-        urls: "turn:global.relay.metered.ca:80",
-        username: TURN_USERNAME,
-        credential: TURN_CREDENTIAL,
-      },
-      {
-        urls: "turn:global.relay.metered.ca:80?transport=tcp",
-        username: TURN_USERNAME,
-        credential: TURN_CREDENTIAL,
-      },
-      {
-        urls: "turn:global.relay.metered.ca:443",
-        username: TURN_USERNAME,
-        credential: TURN_CREDENTIAL,
-      },
-      {
-        urls: "turns:global.relay.metered.ca:443?transport=tcp",
-        username: TURN_USERNAME,
-        credential: TURN_CREDENTIAL,
-      },
-    ]});
+  
+    const pc = new RTCPeerConnection({ iceServers: [{
+   urls: [ "stun:bn-turn2.xirsys.com" ]
+}, {
+   username: TURN_USERNAME,
+   credential: TURN_CREDENTIAL,
+   urls: [
+       "turn:bn-turn2.xirsys.com:80?transport=udp",
+       "turn:bn-turn2.xirsys.com:3478?transport=udp",
+       "turn:bn-turn2.xirsys.com:80?transport=tcp",
+       "turn:bn-turn2.xirsys.com:3478?transport=tcp",
+       "turns:bn-turn2.xirsys.com:443?transport=tcp",
+       "turns:bn-turn2.xirsys.com:5349?transport=tcp"
+   ]
+}]
 
-    pc.ondatachannel = e => {
-      dataChannel.current = e.channel;
-      e.channel.onmessage = onMessage;
-      e.channel.onopen = () => log("DataChannel opened.");
-    };
+});
+
 
     pc.onicecandidate = e => {
       if (e.candidate && socket?.id) {
@@ -103,6 +91,9 @@ export function useWebRTC(
     }
   }
 
+  
+
+
   async function initiateSender() {
     if (!peer.current) return;
 
@@ -114,7 +105,25 @@ export function useWebRTC(
 
     const offer = await peer.current.createOffer();
     await peer.current.setLocalDescription(offer);
-    socket?.emit("offer", code, { sdp: offer });
+
+    await new Promise (  resolve => { 
+      if(peer.current?.iceGatheringState === "complete"){
+         resolve(null);
+
+      }else{
+        const checkState = () => { 
+                  if (peer.current?.iceGatheringState === "complete") {
+                  peer.current.removeEventListener("icegatheringstatechange", checkState);
+                  resolve(null);
+                }
+              
+        }
+          peer.current?.addEventListener("icegatheringstatechange", checkState);
+
+      }
+    })
+
+    socket?.emit("offer", code, { sdp: peer.current.localDescription });
 
     log("Offer sent.");
   }
@@ -126,6 +135,12 @@ export function useWebRTC(
   // Handle when we get an offer (receiver side).
   async function handleOffer(id: string, sdp: RTCSessionDescriptionInit) {
     peer.current = createPeer(id);
+
+    peer.current.ondatachannel = e => {
+      dataChannel.current = e.channel;
+      e.channel.onmessage = onMessage;
+      e.channel.onopen = () => log("DataChannel opened")
+    }
     await peer.current.setRemoteDescription(sdp);
     const answer = await peer.current.createAnswer();
     await peer.current.setLocalDescription(answer);
@@ -147,15 +162,20 @@ export function useWebRTC(
   }
 
   // Handle ICE candidate messages
-  async function handleIce(id: string, candidate: Candidate) {
+ async function handleIce(id: string, candidate: Candidate) {
+  try {
     if (peer.current?.remoteDescription) {
-      await peer.current.addIceCandidate(new RTCIceCandidate(candidate));  
-      log("Added ICE candidate.");
+      await peer.current.addIceCandidate(new RTCIceCandidate(candidate));
+      log("Added ICE candidate");
     } else {
       queuedCandidates.current.push(candidate);
-      log("Buffered ICE candidate.");
+      log("Buffered ICE candidate");
     }
+  } catch (err) {
+    console.error("Failed to add ICE candidate", err);
   }
+}
+
 
   // Request to connect to a nearby user and start WebRTC offer if successful
   // TODO 
@@ -185,7 +205,6 @@ export function useWebRTC(
         },
         (res: { success: boolean; message?: string }) => {
           if (res.success) {
-            console.log("User invited successfully!");
             resolve();
           } else {
             console.error("Invite failed:", res.message);
