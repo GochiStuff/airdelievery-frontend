@@ -6,6 +6,7 @@ import Header from "@/components/header";
 import { Oswald } from "next/font/google";
 import Head from "next/head";
 import { Analytics } from "@vercel/analytics/next"
+import Script from "next/script";
 
 const oswald = Oswald({
   variable: "--font-geist-sans",
@@ -61,9 +62,27 @@ export default function RootLayout({
     <html lang="en">
 
       <Head>
+
+
+        
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#000000" />
         <meta name="mobile-web-app-capable" content="yes" />
+
+
+         {/*Google Analytics Scripts */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-5Y4FH5R2V3"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-5Y4FH5R2V3');
+          `}
+        </Script>
       </Head>
       <body
         className={`${oswald.variable} ${geistMono.variable} antialiased`}
