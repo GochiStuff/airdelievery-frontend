@@ -9,7 +9,7 @@ function userMessage(msg: string) {
   if (msg.includes("DataChannel opened")) return "Connection established";
   if (msg.includes("Offer sent")) return "Sending offer...";
   if (msg.includes("Answer sent")) return "Offer accepted...";
-  if (msg.includes("Remote description set")) return "Description set";
+  if (msg.includes("Remote description set")) return "Connection improved";
   if (msg.includes("Added ICE candidate")) return "Connection improved";
   if (msg.includes("Buffered ICE candidate")) return "Setting up...";
   if (msg.includes("Joined signaling")) return "Joined room, waiting";
@@ -46,6 +46,9 @@ export function useWebRTC(
   }
 
 
+  function sendFeedback( form: { email : string , type : string , subject : string , message : string }){
+    socket?.emit("feedback" , JSON.stringify({form}));
+  }
   function createPeer(id: string) {
     const TURN_USERNAME = process.env.NEXT_PUBLIC_TURN_USERNAME || "";
     const TURN_CREDENTIAL = process.env.NEXT_PUBLIC_TURN_CREDENTIAL || "";
@@ -286,6 +289,7 @@ export function useWebRTC(
     status, 
     nearByUsers,
     inviteToFlight,
+    sendFeedback,
     refreshNearby,
     
     members, 

@@ -19,7 +19,6 @@ import {
 import { QRCodeSVG } from "qrcode.react";
 import { useWebRTC } from "@/hooks/useWebRTC";
 import { useFileTransfer } from "@/hooks/useFileTransfer";
-import { useSocket } from "@/hooks/socketContext";
 import { Switch } from "@/components/ui/switch";
 
 export default function RoomPage() {
@@ -27,11 +26,32 @@ export default function RoomPage() {
   const flight = typeof code === "string" ? code : "";
   const [showQR, setShowQR] = useState(false);
 
+  const [email, setEmail] = useState("");
+  const [type, setType] = useState("feedback");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(false);
+
+    const handleFeedbackSent = () => {
+      setEmail("");
+      setType("feedback");
+      setSubject("");
+      setMessage("");
+      setShowFeedback(false);
+      setFeedbackSent(true);
+
+      setTimeout(() => {
+        setFeedbackSent(false);
+      }, 5000);
+    };
+
+
 
   const [isSpinning, setIsSpinning] = useState(false);
 
   // WebRTC and file transfer hooks
-  const { dataChannel, status, members, refreshNearby, inviteToFlight, nearByUsers } = useWebRTC(flight, e => fileTrans.handleMessage(e));
+  const { dataChannel, status, members, refreshNearby, inviteToFlight, nearByUsers , sendFeedback } = useWebRTC(flight, e => fileTrans.handleMessage(e));
   const fileTrans = useFileTransfer(dataChannel);
 
   const handleRefresh = () => {
@@ -133,6 +153,100 @@ export default function RoomPage() {
             </div>
           </div>
         )}
+
+
+        {/* feedback */}
+        {showFeedback && (
+  <div className="fixed inset-0 bg-zinc-900/60 h-screen flex items-center justify-center z-50">
+    <div className="relative bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm border-2 border-orange-400">
+      {/* Close button */}
+      <button
+        onClick={() => setShowFeedback(false)}
+        className="absolute top-3 right-3 text-zinc-400 hover:text-orange-600 text-2xl font-bold"
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+      {/* Title */}
+      <h2 className="text-xl font-bold text-zinc-900 mb-4 text-center">
+        Send Feedback
+      </h2>
+
+      {/* Feedback Form */}
+      <form
+            className="flex flex-col gap-3"
+            onSubmit={async (e) => {
+              e.preventDefault();
+
+              const formData = {
+                email,
+                type,
+                subject,
+                message,
+              };
+              sendFeedback(formData);
+              handleFeedbackSent();
+            }}
+          >
+            {/* Email (optional) */}
+            <input
+              type="email"
+              placeholder="Your email (optional)"
+              className="bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-800"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+
+            {/* Type selector */}
+            <select
+              className="bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-800"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+            >
+              <option value="feedback">Feedback</option>
+              <option value="report">Bug Report</option>
+            </select>
+
+            {/* Subject */}
+            <input
+              type="text"
+              required
+              placeholder="Subject"
+              className="bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-800"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            />
+
+            {/* Message */}
+            <textarea
+              required
+              rows={4}
+              placeholder="Your message"
+              className="bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-800 resize-none"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+            />
+
+            {/* Submit */}
+            <button
+              type="submit"
+              className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition"
+            >
+              Send
+            </button>
+          </form>
+        </div>
+      </div>
+    )}
+
+    {feedbackSent && (
+        <div className="fixed bottom-5 right-5 animte-fadeIn border-green-600 bg-green-400 text-white px-4 py-2 rounded-xl shadow-lg z-50 text-sm animate-fade-in">
+         Thank you for your feedback!
+        </div>
+      )}
+
+
 
 
         {/* Main Content: Upload + Users + Queue */}
@@ -291,7 +405,15 @@ export default function RoomPage() {
               >
                 Install
               </button>
+             
             </div>
+             {/* <button
+                className="flex-1 mt-2 gap-2  text-zinc-900 font-medium"
+                onClick={ () => setShowFeedback(true)}
+                  
+              >
+              report / feedback
+              </button> */}
           </div>
         </section>
       </div>
