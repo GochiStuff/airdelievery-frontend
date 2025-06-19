@@ -41,7 +41,7 @@ export default function RoomPage() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-50 text-zinc-900 py-8 px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-gray-200 text-zinc-900 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-center bg-white rounded-2xl shadow-xl p-8 mb-6 ">
@@ -337,7 +337,7 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
 
 
   return (
-    <div className="bg-white relative rounded-2xl shadow-sm p-4">
+    <div className="bg-[#f8f9fa] relative rounded-2xl shadow-sm p-4">
       <h3 className="text-lg font-semibold mb-4">{title}</h3>
     { reciver && 
     <div className="absolute top-3 align-text-top right-5 flex gap-2">
