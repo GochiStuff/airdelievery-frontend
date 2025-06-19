@@ -61,7 +61,7 @@ export default function RootLayout({
   return (
     <html lang="en">
 
-      <Head>
+      <head>
 
 
         
@@ -70,6 +70,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
 
 
+      </head>
          {/*Google Analytics Scripts */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-5Y4FH5R2V3"
@@ -83,7 +84,6 @@ export default function RootLayout({
             gtag('config', 'G-5Y4FH5R2V3');
           `}
         </Script>
-      </Head>
       <body
         className={`${oswald.variable} ${geistMono.variable} antialiased`}
       >
