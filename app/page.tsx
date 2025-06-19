@@ -56,7 +56,7 @@ export default function MainPage() {
 
             {/* Ticket Header */}
             <div className="flex flex-col items-center mb-6">
-                <span className="uppercase tracking-widest text-xs font-bold text-zinc-100 opacity-70">Airdelivery.io</span>
+                <span className="uppercase tracking-widest text-xs font-bold text-zinc-100 opacity-70">airdelivery.site</span>
                 <h2 className="text-3xl font-extrabold tracking-tight text-zinc-100 mt-2 mb-1">Boarding Pass</h2>
                 <span className="text-sm text-zinc-100 opacity-70">Your file transfer ticket</span>
              
