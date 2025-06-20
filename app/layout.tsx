@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import {  Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SocketProvider } from "@/hooks/socketContext";
 import Header from "@/components/header";
 import { Oswald } from "next/font/google";
 import Head from "next/head";
+import { Analytics } from "@vercel/analytics/next"
+import Script from "next/script";
 
 const oswald = Oswald({
   variable: "--font-geist-sans",
@@ -17,22 +19,33 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Air Delivery",
-  description: "Fast, secure, and efficient peer-to-peer file transfer via airways.",
+  title: "Air Delivery – Secure & Fast P2P File Sharing",
+  description:
+    "Send files instantly with Air Delivery: peer-to-peer transfers via a simple flight code. No login, no ads, secure and efficient.",
   applicationName: "Air Delivery",
   authors: [{ name: "Yash Jangid", url: "https://x.com/GochiStuff" }],
-  keywords: ["File Transfer", "P2P", "WebRTC", "Air Delivery", "Fast Transfer"],
+  keywords: [
+    "P2P file sharing",
+    "peer-to-peer transfer",
+    "Air Delivery",
+    "WebRTC",
+    "file transfer",
+    "secure file sharing",
+  ],
+  metadataBase: new URL("https://airdelivery.site"),
+  viewport: "width=device-width, initial-scale=1",
   openGraph: {
-    title: "Air Delivery",
-    description: "airways is the way to transport.",
-    url: "https://air-delivery.vercel.app",
+    title: "Air Delivery – Secure & Fast P2P File Sharing",
+    description:
+      "Send files instantly with Air Delivery: peer-to-peer transfers via a simple flight code. No login, no ads, secure and efficient.",
+    url: "https://airdelivery.site",
     siteName: "Air Delivery",
     images: [
       {
-        url: "https://air-delivery.vercel.app/og-image.png",
+        url: "/og-banner.png", 
         width: 1200,
         height: 630,
-        alt: "Air Delivery File Transfer App",
+        alt: "Air Delivery – Peer-to-peer file sharing via flight code",
       },
     ],
     locale: "en_US",
@@ -40,14 +53,18 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Air Delivery",
-    description: "Fast peer-to-peer file transfer via airways.",
-    images: ["https://air-delivery.vercel.app/twitter-image.png"],
+    title: "Air Delivery – Secure & Fast P2P File Sharing",
+    description:
+      "Send files instantly with Air Delivery: peer-to-peer transfers via a simple flight code. No login, no ads, secure and efficient.",
+    images: ["/og-banner.png"],
+    creator: "@GochiStuff", // update if needed
   },
   icons: {
     icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
+  manifest: "/manifest.json",
 };
 
 
@@ -56,20 +73,88 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://airdelivery.site/#website",
+        "url": "https://airdelivery.site/",
+        "name": "Air Delivery",
+        "description":
+          "Send files instantly with Air Delivery: peer-to-peer transfers via a simple flight code. No login, no ads, secure and efficient.",
+        "publisher": {
+          "@id": "https://airdelivery.site/#organization",
+        },
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://airdelivery.site/#organization",
+        "name": "Air Delivery",
+        "url": "https://airdelivery.site/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://airdelivery.site/favicon.ico",
+        },
+        "sameAs": [
+          "https://twitter.com/GochiStuff"
+        ],
+      },
+    ],
+  };
+
+
   return (
+
+
     <html lang="en">
 
-      <Head>
-        <link rel="manifest" href="/manifest.json" />
+      <head>
+
+
+        
+        {/* PWA & Performance Hints */}
         <meta name="theme-color" content="#000000" />
         <meta name="mobile-web-app-capable" content="yes" />
-      </Head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://www.google-analytics.com" />
+
+        {/* Structured Data JSON-LD */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+
+      </head>
+         {/*Google Analytics Scripts */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-5Y4FH5R2V3"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-5Y4FH5R2V3');
+          `}
+        </Script>
       <body
         className={`${oswald.variable} ${geistMono.variable} antialiased`}
       >
         <SocketProvider>
           <Header/>
         {children}
+         <Analytics />
         </SocketProvider>
       </body>
     </html>

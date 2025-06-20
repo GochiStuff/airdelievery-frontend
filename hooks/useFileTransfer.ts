@@ -6,6 +6,7 @@ import pRetry from "p-retry";
 import streamSaver from "streamsaver";
 import { flattenFileList } from "@/utils/flattenFilelist";
 import { buffer } from "stream/consumers";
+import { v4 } from "uuid";
 
 type TransferStatus = "queued" | "sending" | "paused" | "done" | "error" | "canceled" | "receiving" ;
 
@@ -24,6 +25,8 @@ type RecvTransfer = {
   size: number;
   received: number;
   progress: number;
+  blobUrl?: string;
+  downloaded?: boolean;
   status: TransferStatus;
 };
 
@@ -32,6 +35,10 @@ type Meta = {
   totalReceived: number;
   speedBps: number;
 };
+
+
+
+
 
 export function useFileTransfer(
   dataChannel: RTCDataChannel | null
@@ -46,7 +53,7 @@ export function useFileTransfer(
   });
 
   
-  const MAX_RAM_SIZE = 1024 * 1024 * 1024;
+  const MAX_RAM_SIZE = 500 * 1024 * 1024; // 500 MB GB 
   const peerMax = (dataChannel as any)?.maxMessageSize || 256 * 1024;
   const CHUNK_SIZE = Math.min(256 * 1024, Math.floor(peerMax * 0.9));
   const BUFFER_THRESHOLD = CHUNK_SIZE * 8;
@@ -54,9 +61,10 @@ export function useFileTransfer(
 
   // Incoming streams
   const incoming = useRef<
-    Record<string, { size: number; received: number;writing : boolean;  queue: ArrayBuffer[], lastProgressUpdate : number ; writer: WritableStreamDefaultWriter }>
+    Record<string, { size: number; received: number;writing : boolean;  queue: ArrayBuffer[], lastProgressUpdate : number ; writer: WritableStreamDefaultWriter  | null}>
   >({});
   const currentReceivingIdRef = useRef<string | null>(null);
+
 
   // Queue
   const pq = useRef(new PQueue({ concurrency: 1 }));
@@ -81,6 +89,78 @@ export function useFileTransfer(
     receiving: "Receiving"
   };
 
+function downloadFile(
+  file: { transferId: string; blobUrl: string; directoryPath: string }
+) {
+  const a = document.createElement("a");
+  a.href = file.blobUrl;
+  a.download = file.directoryPath;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(file.blobUrl);
+
+    setRecvQueue((prev) =>
+      prev.map((f) =>
+        f.transferId === file.transferId ? { ...f, downloaded: true } : f
+      )
+    );
+    
+  }, 500);
+}
+
+
+function openFile(blobUrl: string) {
+  window.open(blobUrl, "_blank", "noopener,noreferrer");
+}
+
+
+
+
+async function downloadAll() {
+  for (const file of recvQueue) {
+    if (
+      file.status === "done" &&
+      file.blobUrl &&
+      !file.downloaded
+    ) {
+      // Trigger download
+      const a = document.createElement("a");
+      a.href = file.blobUrl;
+      a.download = file.directoryPath;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      await new Promise((res) => setTimeout(res, 100));
+    }
+  }
+}
+
+
+const [autoDownload, setAutoDownload] = useState(false);
+
+function tryAutoDownload(
+  url: string,
+  filename: string
+) {
+  if(autoDownload){
+
+    const a = document.createElement("a");
+    a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => {
+    URL.revokeObjectURL(url);          
+  }, 800);
+  }
+}
+
+
   const handleFileSelect = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files) return;
@@ -93,7 +173,7 @@ export function useFileTransfer(
             return !existingPaths.has(path);
           })
           .map((file) => {
-            const id = crypto.randomUUID();
+            const id = v4();
             transferControls.current[id] = { paused: false, canceled: false };
             return {
               file,
@@ -269,6 +349,7 @@ function unpack(buffer : ArrayBuffer ){
   return { transferId, chunk };
 }
 
+
 async function ProcessRecQue(transferId: string) {
   const rec = incoming.current[transferId];
 
@@ -284,6 +365,7 @@ async function ProcessRecQue(transferId: string) {
       if (!chunk) continue;
 
       try {
+        if(!rec.writer) return
         await rec.writer.write(new Uint8Array(chunk));
         rec.received += chunk.byteLength;
 
@@ -312,6 +394,7 @@ async function ProcessRecQue(transferId: string) {
       } catch (err) {
         console.error("Writer error:", err);
         try {
+            if(!rec.writer) return
           await rec.writer.abort?.();
         } catch {}
         delete incoming.current[transferId];
@@ -326,8 +409,12 @@ async function ProcessRecQue(transferId: string) {
 
     if (rec.received >= rec.size) {
       try {
+        if(!rec.writer) return
         await rec.writer.close();
       } catch {}
+      rec.writing = false;
+      rec.writer = null; 
+      currentReceivingIdRef.current = null;
       delete incoming.current[transferId];
       setRecvQueue((rq) =>
         rq.map((r) =>
@@ -336,10 +423,10 @@ async function ProcessRecQue(transferId: string) {
             : r
         )
       );
-      currentReceivingIdRef.current = null;
+
+      await new Promise(res => setTimeout(res, 50)); 
     }
   } finally {
-
     rec.writing = false;
   }
 }
@@ -371,10 +458,10 @@ async function ProcessRecQue(transferId: string) {
 
           let writer: WritableStreamDefaultWriter;
           let chunks: Uint8Array[] | undefined = undefined;
-          
+          let downloaded = false;
 
             if ( size < MAX_RAM_SIZE){
-              console.log("USING RAM")
+              
               chunks = [];
               // writing own ram writer 
               writer = {
@@ -390,16 +477,21 @@ async function ProcessRecQue(transferId: string) {
 
                   const blob = new Blob([all]);
                   const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = directoryPath;
-                  document.body.appendChild(a);
-                  a.click();
-                  setTimeout(() => {
-                    URL.revokeObjectURL(url);
-                    a.remove();
-                  }, 200);
-                  return Promise.resolve();
+                  setRecvQueue(rq =>
+                  rq.map(r =>
+                    r.transferId === transferId
+                      ? { ...r, blobUrl : url }
+                      : r
+                  )
+                );
+
+            
+                tryAutoDownload(url, directoryPath);
+
+                if( chunks?.length ) chunks.length = 0;
+
+                return Promise.resolve();
+
                 },
                 abort: () => { chunks = undefined; return Promise.resolve(); },
                 // Required properties for WritableStreamDefaultWriter
@@ -412,6 +504,8 @@ async function ProcessRecQue(transferId: string) {
               
             }else{
               const stream = streamSaver.createWriteStream(directoryPath, { size });
+
+              downloaded = true;
               writer = stream.getWriter();
             }
             incoming.current[transferId] = {
@@ -425,7 +519,7 @@ async function ProcessRecQue(transferId: string) {
     
             setRecvQueue((rq) => [
               ...rq,
-              { transferId, directoryPath, size, received: 0, progress: 0, status: "receiving" }
+              { transferId, directoryPath, blobUrl : "", size, downloaded , received: 0, progress: 0, status: "receiving" }
             ]);
           } catch (err) {
             console.error("Error creating write stream:", err);
@@ -464,6 +558,7 @@ async function ProcessRecQue(transferId: string) {
         if (type === "cancel") {
           if (incoming.current[transferId]) {
             try {
+              if(!incoming.current[transferId].writer) return
               incoming.current[transferId].writer.abort();
             } catch {}
             delete incoming.current[transferId];
@@ -629,6 +724,7 @@ async function ProcessRecQue(transferId: string) {
   const cancelReceive = useCallback((transferId: string) => {
     const rec = incoming.current[transferId];
     if (rec) {
+          if(!rec.writer) return
       try { rec.writer.abort(); } catch {}
       delete incoming.current[transferId];
     }
@@ -653,8 +749,13 @@ async function ProcessRecQue(transferId: string) {
 
   return {
     queue: userQueue,
+    downloadAll,
+    downloadFile,
+    openFile,
     recvQueue,
     meta,
+    setAutoDownload ,
+    autoDownload,
     handleFileSelect,
     pauseTransfer,
     resumeTransfer,

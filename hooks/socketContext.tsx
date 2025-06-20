@@ -5,11 +5,19 @@ import { io, Socket } from "socket.io-client";
 type SocketContextType = {
     socket: Socket | null;
     reconnect: () => void;
+    user : User ;
 };
+
+type User = { 
+    id ? : string , 
+    name ?: string 
+}
+
 
 
 const SocketContext = createContext<SocketContextType>({
     socket:null,
+    user  : { id : ''},
     reconnect: () => {}
 });
 
@@ -20,9 +28,19 @@ type SocketProviderProps = {
 export const SocketProvider = ({ children }: SocketProviderProps) => {
    const [socket, setSocket] = useState<Socket | null>(null);
    
+   const [ user , setuser ] = useState<User>( { id : "Unkown" , name: "Unkown"});
+
     useEffect(() => {
-        const newSocket = io(process.env.NEXT_PUBLIC_SOCKET);
+        const newSocket = io(process.env.NEXT_PUBLIC_SOCKET!, {
+        transports: ['websocket'], 
+        withCredentials: true 
+        });
         setSocket(newSocket);
+
+        newSocket.on("yourName", (user: User) => {
+            setuser(user);
+        });
+
 
         return () => {
             newSocket.disconnect();
@@ -30,16 +48,27 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     }, []);
 
     const reconnect = () => {
-        socket?.disconnect();
-        const newSocket = io(process.env.NEXT_PUBLIC_SOCKET);
-        setSocket(newSocket);
-    }
+    socket?.disconnect();
+
+    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET!, {
+        transports: ['websocket'],
+        withCredentials: true
+    });
+
+    newSocket.on("yourName", (user: User) => {
+        setuser(user);
+    });
+
+    setSocket(newSocket);
+    };
+
 
     return (
-        <SocketContext.Provider value={  {socket  , reconnect}} >
+        <SocketContext.Provider value={  {socket , user , reconnect}} >
             {children}
         </SocketContext.Provider>
     );
 };
+
 
 export const useSocket = () => useContext(SocketContext);
