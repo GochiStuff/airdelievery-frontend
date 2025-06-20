@@ -569,15 +569,17 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
                     </button>
                   )}
                   {item.status === "done" && item.status !== "canceled" && !autoDownload && item.blobUrl  &&  (
-                    <button
-                    className="p-2 rounded-full bg-yellow-50 hover:bg-yellow-100 text-yellow-500 border border-yellow-200 transition"
-                    //@ts-ignore
-                    onClick={() => openfile(item.blobUrl) }
-                    title="open"
-                    >
-                      {/* TODO */}
-                      {/* <Play className="w-4 h-4" /> */}
-                    </button>
+                  
+                  <></>
+                  // TODO
+                  // <button
+                    // className="p-2 rounded-full bg-yellow-50 hover:bg-yellow-100 text-yellow-500 border border-yellow-200 transition"
+                    // //@ts-ignore
+                    // onClick={() => openfile(item.blobUrl) }
+                    // title="open"
+                    // >
+                    //   <Play className="w-4 h-4" />
+                    // </button>
                   )}
                   </>}
                       </>
