@@ -7,6 +7,7 @@ import { Oswald } from "next/font/google";
 import Head from "next/head";
 import { Analytics } from "@vercel/analytics/next"
 import Script from "next/script";
+import FooterStrip from "@/components/footer";
 
 const oswald = Oswald({
   variable: "--font-geist-sans",
@@ -154,6 +155,7 @@ export default function RootLayout({
         <SocketProvider>
           <Header/>
         {children}
+        <FooterStrip/>
          <Analytics />
         </SocketProvider>
       </body>

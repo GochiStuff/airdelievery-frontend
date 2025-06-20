@@ -1,101 +1,98 @@
+"use client";
+
 import { InfoIcon } from "lucide-react";
 import React, { useState } from "react";
+import FeedbackPopup from "./Feedback";
 
 const aboutInfo = [
-    {
-        title: "What is Air Delivery?",
-        content:
-            "Air Delivery is a free, streamlined web app for fast, private file sharing. It leverages peer-to-peer (P2P) technology to transfer files directly between devices—no uploads to external servers, no intermediaries, just speed and privacy.",
-    },
-    {
-        title: "How do I use it?",
-        content: (
-            <>
-                <strong>On the same Wi-Fi or local network</strong>
-                <br />
-                Open Air Delivery on both devices connected to the same network. Devices will automatically detect each other. Simply drag and drop your files to start a direct, high-speed transfer.
-                <br /><br />
-                <strong>Across different networks</strong>
-                <br />
-                Please note: Due to current TURN server limitations, transfers across different networks may be unreliable or slow.
-                <br />
-                Connect with someone outside your network using a <b>Flight Code</b>, <b>QR code</b>, or <b>link</b>. Click the <b>+</b> button at the top right and follow the prompts to establish a secure connection, then send files as usual.
-            </>
-        ),
-    },
-    {
-        title: "Security & Privacy",
-        content:
-            "Air Delivery uses end-to-end encrypted P2P connections powered by WebRTC. No file data or metadata is stored or routed through any server. Your files are transferred directly between devices—ensuring complete privacy and security.",
-    },
-    {
-        title: "Development Status",
-        content:
-            "This is the initial release of Air Delivery. You may encounter minor bugs, and new features are actively being developed. Your feedback is welcome and helps improve the platform.",
-    },
-    {
-        title: "Is it Open Source?",
-        content:
-            "Air Delivery is currently not open source. It’s a custom-built platform designed to provide the best P2P file-sharing experience on the web.",
-    },
-    {
-        title: "Feedback & Support",
-        content:
-            "Have a suggestion or found a bug? Reach out to the developer—your input helps shape the future of Air Delivery.",
-    },
+  {
+    title: "What is Air Delivery?",
+    content:
+      "Air Delivery is a free, streamlined web app for fast, private file sharing. It uses peer-to-peer (P2P) technology to transfer files directly between devices — no uploads, no intermediaries, just speed and privacy.",
+  },
+  {
+    title: "How do I use it?",
+    content: (
+      <>
+        <p><strong>Same network:</strong> Open Air Delivery on both devices connected to the same Wi-Fi. They’ll auto-detect each other. Drop files and send.</p>
+        <p className="mt-2"><strong>Different networks:</strong> Use a <b>Flight Code</b>, <b>QR</b>, or <b>link</b> to connect. (Note: Some connections may be slower due to TURN server limitations.)</p>
+      </>
+    ),
+  },
+  {
+    title: "Security & Privacy",
+    content:
+      "Files are end-to-end encrypted using WebRTC. Nothing is stored or routed through any server — transfers happen directly between devices.",
+  },
+  {
+    title: "Development Status",
+    content:
+      "This is the initial release. Expect some bugs. New features and improvements are in progress — your feedback matters!",
+  },
+  {
+    title: "Is it Open Source?",
+    content:
+      "Not yet. Air Delivery is a handcrafted experience, optimized for privacy and speed.",
+  },
+  {
+    title: "Feedback & Support",
+    content:
+      "Found a bug? Got an idea? Reach out! Every bit of feedback helps shape the future of Air Delivery.",
+  },
 ];
 
 export default function AboutCard() {
-    const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
-    return (
-        <div>
+  return (
+    <div>
+      <button
+        aria-label="About Air Delivery"
+        onClick={() => setOpen(true)}
+        className="text-sm font-medium text-zinc-300 hover:text-orange-500 transition-colors"
+      >
+        How it works?
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm overflow-auto"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-2xl w-full p-6 md:p-8 m-4 mt-20 shadow-2xl text-zinc-800 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
-                aria-label="About Air Delivery"
-                onClick={() => setOpen(true)}
-                className="hover:text-orange-500 text-zinc-100 rounded-full transition-colors"
+              aria-label="Close"
+              onClick={() => setOpen(false)}
+              className="absolute top-4 right-4 text-2xl text-zinc-400 hover:text-zinc-700 transition"
             >
-                <InfoIcon />
+              &times;
             </button>
 
-            {/* Modal Card */}
-            {open && (
-                <div
-                    className="fixed inset-0 z-100 flex items-start justify-center bg-black/30 overflow-auto"
-                    style={{ paddingTop: "env(safe-area-inset-top, 24px)" }}
-                    onClick={() => setOpen(false)}
-                >
-                    <div
-                        className="bg-white rounded-xl max-w-2xl w-full p-8 shadow-lg relative mt-6 mx-2"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <button
-                            aria-label="Close"
-                            onClick={() => setOpen(false)}
-                            className="absolute top-3 right-3 bg-transparent border-none text-2xl cursor-pointer text-zinc-400 hover:text-zinc-600"
-                        >
-                            &times;
-                        </button>
-                        <h2 className="mt-0 mb-4 text-2xl font-semibold tracking-tighter text-zinc-900">
-                            Air Delivery
-                        </h2>
-                        <p className="mb-4 text-zinc-700">
-                            Share it with friends and use it whenever you want!
-                        </p>
-                        <p className="text-sm text-zinc-600 mb-6">
-                            ⚠️ This is an early release. You might run into minor bugs — many awesome features are on the way! 
-                        </p>
-                        <div className="text-base text-zinc-800">
-                            {aboutInfo.map((section) => (
-                                <div key={section.title} className="mb-5">
-                                    <strong className="block">{section.title}</strong>
-                                    <div className="mt-1">{section.content}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-zinc-900 mb-2">
+              Air Delivery
+            </h2>
+            <p className="text-sm text-zinc-500 mb-4">
+            A fast, private way to share files .
+            </p>
+
+            <div className="space-y-5 text-sm md:text-base leading-relaxed">
+              {aboutInfo.map(({ title, content }) => (
+                <div key={title}>
+                  <h3 className="font-semibold text-zinc-800 mb-1">{title}</h3>
+                  <div className="text-zinc-600">{content}</div>
                 </div>
-            )}
+              ))}
+
+            <FeedbackPopup/>
+            </div>
+            
+          </div>
+
         </div>
-    );
+      )}
+    </div>
+  );
 }
