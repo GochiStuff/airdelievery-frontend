@@ -575,7 +575,8 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
                     onClick={() => openfile(item.blobUrl) }
                     title="open"
                     >
-                      <Play className="w-4 h-4" />
+                      {/* TODO */}
+                      {/* <Play className="w-4 h-4" /> */}
                     </button>
                   )}
                   </>}
