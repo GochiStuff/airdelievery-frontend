@@ -93,11 +93,17 @@ function downloadFile(
   file: { transferId: string; blobUrl: string; directoryPath: string }
 ) {
   const a = document.createElement("a");
+
   a.href = file.blobUrl;
   a.download = file.directoryPath;
+
+  a.style.display = "none"; 
   document.body.appendChild(a);
-  a.click();
-  a.remove();
+
+  requestAnimationFrame(() => {
+    a.click();
+    document.body.removeChild(a);
+  });
 
   setTimeout(() => {
     URL.revokeObjectURL(file.blobUrl);
@@ -107,9 +113,9 @@ function downloadFile(
         f.transferId === file.transferId ? { ...f, downloaded: true } : f
       )
     );
-    
-  }, 500);
+  }, 2000); 
 }
+
 
 
 function openFile(blobUrl: string) {

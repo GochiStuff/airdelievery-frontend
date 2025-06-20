@@ -34,7 +34,6 @@ export const metadata: Metadata = {
     "secure file sharing",
   ],
   metadataBase: new URL("https://airdelivery.site"),
-  viewport: "width=device-width, initial-scale=1",
   openGraph: {
     title: "Air Delivery – Secure & Fast P2P File Sharing",
     description:
@@ -66,6 +65,11 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   manifest: "/manifest.json",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 
@@ -105,6 +109,8 @@ export default function RootLayout({
       },
     ],
   };
+
+  
 
 
   return (

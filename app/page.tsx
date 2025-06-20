@@ -5,13 +5,13 @@ import { useSocket } from "@/hooks/socketContext";
 import { useRouter } from "next/navigation";
 import AboutCard from "@/components/aboutCard";
 import { useInvitationToJoin } from "@/hooks/invitationToJoin";
+import { getLocalIp } from "@/hooks/useWebRTCforIP";
 
 export default function MainPage() {
     const router = useRouter();
-    const { socket } = useSocket();
+    const { socket , user } = useSocket();
 
     const [flightCode, setFlightCode] = useState<string>("");
-    const {user} = useSocket();
 
     const handleCreate = () => {
         if (!socket) return;
@@ -30,6 +30,14 @@ export default function MainPage() {
         }
 
     };
+
+
+    useEffect( () => {
+        getLocalIp( ip => {
+            socket?.emit("registerLocalIp", { localIP : ip});
+            console.log("SENDING IP ADDRESS");
+        })
+    }, [socket]);
 
     const invitationPop = useInvitationToJoin();
 

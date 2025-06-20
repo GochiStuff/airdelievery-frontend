@@ -180,24 +180,6 @@ export function useWebRTC(
 }
 
 
-  // Request to connect to a nearby user and start WebRTC offer if successful
-  // TODO 
-  // async function requestToConnect(targetId: string): Promise<void> {
-  //   return new Promise((resolve, reject) => {
-  //     socket?.emit("requestToConnect", targetId, (res: { success: boolean; code?: string; message?: string }) => {
-  //       if (res.success && res.code) {
-  //         console.log("Flight created! Code:", res.code);
-  //         initiateSender(targetId);
-  //         resolve();
-  //       } else {
-  //         console.error("Failed to connect:", res.message);
-  //         reject(res.message);
-  //       }
-  //     });
-  //   });
-  // }
-
-
   async function inviteToFlight(user: Member, currentFlightCode: string): Promise<void> {
     return new Promise((resolve, reject) => {
       socket?.emit(
