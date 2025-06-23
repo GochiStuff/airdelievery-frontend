@@ -3,9 +3,7 @@
 import { useState, useRef, ChangeEvent, useEffect, useCallback } from "react";
 import PQueue from "p-queue";
 import pRetry from "p-retry";
-import streamSaver from "streamsaver";
 import { flattenFileList } from "@/utils/flattenFilelist";
-import { buffer } from "stream/consumers";
 import { v4 } from "uuid";
 
 type TransferStatus = "queued" | "sending" | "paused" | "done" | "error" | "canceled" | "receiving" ;
@@ -41,7 +39,8 @@ type Meta = {
 
 
 export function useFileTransfer(
-  dataChannel: RTCDataChannel | null
+  dataChannel: RTCDataChannel | null,
+  disconnect : () => void,
 ) {
 
   const [queue, setQueue] = useState<Transfer[]>([]);
@@ -441,7 +440,7 @@ async function ProcessRecQue(transferId: string) {
 
   // RECIEVE
   const handleMessage = useCallback(
-    (event: MessageEvent) => {
+    async (event: MessageEvent) => {
       // headers 
       if (typeof event.data === "string") {
         let msg: any;
@@ -509,6 +508,8 @@ async function ProcessRecQue(transferId: string) {
 
               
             }else{
+              
+              const streamSaver = (await import("streamsaver")).default;
               const stream = streamSaver.createWriteStream(directoryPath, { size });
 
               downloaded = true;
@@ -617,6 +618,26 @@ async function ProcessRecQue(transferId: string) {
     [ recvQueue]
   );
 
+  function resetTransfer() { 
+    Object.values( transferControls.current).forEach( ctrl => {
+      ctrl.canceled = true;
+      if(ctrl.paused && ctrl.resumeResolve){
+        ctrl.paused = false;
+        ctrl.resumeResolve();
+      }
+    });
+
+    transferControls.current = {};
+    setQueue([]);
+    // abort 
+    Object.values(incoming.current).forEach(rec => {
+      rec.writer?.abort();
+    })
+
+    incoming.current = {};
+    setRecvQueue([]);
+    setMeta( {totalReceived : 0, totalSent: 0 , speedBps:0});
+  }
 
 
   // SETUP 
@@ -628,10 +649,20 @@ async function ProcessRecQue(transferId: string) {
     dataChannel.onopen = () => {
     };
     dataChannel.onclose = () => {
+      // Mark all in flight sends as paused 
+      setQueue( q => q.map( t => {
+        if(t.status === "sending"){
+          transferControls.current[t.transferId].paused = true;
+          return {...t , status: "paused" as const };
+        }
+        return t;
+      }))
+
+      disconnect();
     };
     dataChannel.onerror = (err) => {
-      console.error("RTCDataChannel error", err);
-
+      // console.error("RTCDataChannel error", err);
+      disconnect();
     };
     return () => {
       dataChannel.onmessage = null;
@@ -670,6 +701,24 @@ async function ProcessRecQue(transferId: string) {
         });
     });
   }, [queue, dataChannel, sendFile ])
+
+  // for sending the queue when data chaneels 
+  useEffect(() => {
+    if( !dataChannel) return;
+    const onOpen = () => { 
+      setQueue(prev => [...prev]);
+    }
+
+    if(dataChannel.readyState === "open"){
+      onOpen();
+    }
+
+    dataChannel.addEventListener("open" , onOpen);
+
+    return ()=>{
+      dataChannel.removeEventListener("open" , onOpen);
+    }
+  } , [dataChannel])
  
 
   // CONTROL HELLPER 
@@ -757,6 +806,7 @@ async function ProcessRecQue(transferId: string) {
     queue: userQueue,
     downloadAll,
     downloadFile,
+    resetTransfer,
     openFile,
     recvQueue,
     meta,
@@ -766,6 +816,9 @@ async function ProcessRecQue(transferId: string) {
     pauseTransfer,
     resumeTransfer,
     cancelTransfer,
+    setMeta,
+    setQueue,
+    setRecvQueue,
     cancelReceive,
     handleMessage
   };

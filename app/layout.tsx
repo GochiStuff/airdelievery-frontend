@@ -4,10 +4,10 @@ import "./globals.css";
 import { SocketProvider } from "@/hooks/socketContext";
 import Header from "@/components/header";
 import { Oswald } from "next/font/google";
-import Head from "next/head";
 import { Analytics } from "@vercel/analytics/next"
 import Script from "next/script";
 import FooterStrip from "@/components/footer";
+import Providers from "./providers";
 
 const oswald = Oswald({
   variable: "--font-geist-sans",
@@ -159,11 +159,14 @@ export default function RootLayout({
         className={`${oswald.variable} ${geistMono.variable} antialiased`}
       >
         <SocketProvider>
+        <Providers>
+          
           <Header/>
         {children}
         <FooterStrip/>
-         <Analytics />
+        </Providers>
         </SocketProvider>
+         <Analytics />
       </body>
     </html>
   );

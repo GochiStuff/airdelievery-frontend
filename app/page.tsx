@@ -1,171 +1,388 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { ChangeEvent, use, useCallback, useEffect, useState } from "react";
 import { useSocket } from "@/hooks/socketContext";
 import { useRouter } from "next/navigation";
 import AboutCard from "@/components/aboutCard";
 import { useInvitationToJoin } from "@/hooks/invitationToJoin";
 import { getLocalIp } from "@/hooks/useWebRTCforIP";
+import { useWebRTCContext } from "@/context/WebRTCContext";
+import { response } from "express";
 
 export default function MainPage() {
-    const router = useRouter();
-    const { socket , user } = useSocket();
+  const router = useRouter();
+  const { socket, user } = useSocket();
 
-    const [flightCode, setFlightCode] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
+  const [flightCode, setFlightCode] = useState<string>("");
+  const { flightId,handleFileSelect,connectToFlight, inviteToFlight ,  leaveFlight, status , nearByUsers, refreshNearby } =
+    useWebRTCContext();
 
-    const handleCreate = () => {
-        if (!socket) return;
-        socket.emit("createFlight", (response: { code: string }) => {
-            router.push(`/flight/${response.code}`);
-        });
-    };
-
-     const [ username , setUsername ] = useState<string>("");
-
-     useEffect(()=> setUsername(user.name ?? ""), [user]);
-
-    const handleJoin = () => {
-        if (flightCode.trim()) {
-            router.push(`/flight/${flightCode.trim()}`);
-        }
-
-    };
+  useEffect(() => {
+    if (flightId) {
+      setFlightCode(flightId);
+    }
+  }, [flightId]);
 
 
-    useEffect( () => {
-        getLocalIp( ip => {
-            socket?.emit("registerLocalIp", { localIP : ip});
-            console.log("SENDING IP ADDRESS");
-        })
-    }, [socket]);
 
-    const invitationPop = useInvitationToJoin();
+  const handleCreate = () => {
+    if (!socket) return;
+    if (flightId) {
+      router.push(`/flight/${flightId}`);
+    }else{
+      socket.emit("createFlight", (response: { code: string }) => {
+        router.push(`/flight/${response.code}`);
+      });
+    }
 
-    return(
-        <div
-            className="relative flex  mb-10 flex-col md:flex-row items-center max-w-9xl mx-auto  justify-around min-h-screen overflow-hidden"
+  };
+
+  useEffect(() => setUsername(user.name ?? ""), [user]);
+
+  const handleJoin = () => {
+    if (flightCode.trim()) {
+      // say that user is already in room so you will enter that room only
+      router.push(`/flight/${flightCode.trim()}`);
+    }
+  };
+
+
+  useEffect(() => {
+    // Register local IP once on socket connection
+    getLocalIp((ip) => {
+      socket?.emit("registerLocalIp", { localIP: ip });
+    });
+
+    // Initial fetch
+    refreshNearby();
+
+    // Set interval to refresh every 5 seconds
+    const interval = setInterval(() => {
+      refreshNearby();
+    },5000);
+
+    // Cleanup on unmount
+    return () => clearInterval(interval);
+  }, [socket]);
+
+  const handleLeaveFlight = () => {
+    leaveFlight();
+  };
+
+  const invitationPop = useInvitationToJoin();
+    const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+
+  return (
+    <div className="relative flex  mb-10 flex-col md:flex-row items-center max-w-9xl mx-auto  justify-around min-h-screen overflow-hidden">
+      {invitationPop}
+     {flightId && (
+  <div className="absolute top-5 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
+    <div className="backdrop-blur-md bg-white/60 border border-zinc-300/60 hover:shadow-xl transition-all shadow-md rounded-full px-6 py-3 flex items-center justify-between space-x-4 text-sm text-zinc-800">
+      {/* Flight Info */}
+      <div className="flex-1">
+        <div className="font-semibold">
+          In Flight:&nbsp;
+          <code className="font-mono text-orange-500">{flightId}</code>
+        </div>
+        <div className="text-xs text-black/60 mt-1">
+          <span
+            className={`font-medium ${
+              status.includes("Connection")
+                ? "text-green-700"
+                : status.includes("Failed") || status.includes("Disconnected")
+                ? "text-red-600"
+                : "text-yellow-500"
+            }`}
+          >
+            {status}
+          </span>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex-shrink-0 flex gap-2">
+        <button
+          onClick={() => router.push(`flight/${flightId}`)}
+          className="px-3 py-1 rounded-md bg-zinc-100 text-black/70 hover:bg-zinc-200 transition font-medium shadow-inner"
         >
-            {invitationPop}
+          Open
+        </button>
+        <button
+          onClick={handleLeaveFlight}
+          className="px-3 py-1 rounded-md bg-red-500/10 text-red-600 hover:bg-red-500/20 transition font-medium shadow-inner"
+        >
+          Leave
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
-            {/* Tagline background */}
-                <div className="relative w-full mt-10 md:w-auto flex md:block flex-col items-center md:items-start text-center md:text-left justify-center">
-                <h1 className="text-6xl md:text-8xl font-extrabold drop-shadow-2xl select-none mb-2">
-                    FAST.<br className="block" />
-                    PRIVATE.<br className="block" />
-                    NO LIMIT.
-                </h1>
 
-                <h2 className="text-lg md:text-xl text-zinc-600 font-medium mt-1 max-w-md">
-                    Send files directly between devices. Instantly.
-                </h2>
+      {/* Tagline background */}
+      <div className="relative w-full mt-10 md:w-auto flex md:block flex-col items-center md:items-start text-center md:text-left justify-center">
+        <h1 className="text-6xl md:text-8xl font-extrabold drop-shadow-2xl select-none mb-2">
+          FAST.
+          <br className="block" />
+          PRIVATE.
+          <br className="block" />
+          NO LIMIT.
+        </h1>
 
-                <p className="mt-1 text-sm mb-4 text-zinc-400 max-w-md">
-                    No cloud. No storage. Just you and the receiver—peer to peer.
-                </p>
+        <h2 className="text-lg md:text-xl text-zinc-600 font-medium mt-1 max-w-md">
+          Send files directly between devices. Instantly.
+        </h2>
+
+        <p className="mt-1 text-sm mb-4 text-zinc-400 max-w-md">
+          No cloud. No storage. Just you and the receiver—peer to peer.
+        </p>
+      </div>
+
+      {/* section 2 */}
+
+      <div className="flex relative items-center sm:items-start flex-col md:flex-row gap-2">
+                {/* nearByUsers grid */}
+        {!flightId && (
+          <div
+            className="
+              z-50 p-2 mt-6 gap-2
+              grid
+              sm:absolute sm:-left-20
+              grid-flow-col auto-cols-max
+              md:grid-flow-row md:grid-cols-1
+              max-w-screen
+            "
+          >
+            {nearByUsers.map((m) => {
+              const isDragOver = dragOverId === m.id;
+              return (
+                <div
+                  key={m.id}
+                  className={`
+                    group
+                    animate-fadeIn
+                    w-16 h-16 origin-right
+                    bg-white/60 backdrop-blur-md border border-zinc-300
+                    rounded-xl shadow-sm overflow-hidden
+                    transition-all duration-300 ease-in-out
+                    cursor-pointer
+                    flex items-center justify-center drag-target
+                    relative
+                    hover:w-52 hover:h-24 hover:scale-110 hover:z-10
+                    ${isDragOver ? "w-52 h-24 scale-110 z-10" : ""}
+                  `}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragOverId(m.id);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (dragOverId !== m.id) {
+                      setDragOverId(m.id);
+                    }
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Only clear if leaving the entire element
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                      setDragOverId(null);
+                    }
+                  }}
+
+                  onClick={() => {
+                    socket?.emit("createFlight", (response: { code: string }) => {
+                      connectToFlight(response.code);
+                      inviteToFlight( m , response.code)
+                      router.push(`/flight/${response.code}`);
+                    });
+                  }}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragOverId(null);
+
+                    // create 
+                    if (!socket) return;
+                    if (flightId) return;
+                    // add toast .
+                    socket.emit("createFlight", (response: { code: string }) => {
+                      connectToFlight(response.code);
+                      inviteToFlight( m , response.code)
+                    });
+
+                    // Extract File[]
+                    const items = e.dataTransfer.items;
+                    const files: File[] = [];
+                    for (let i = 0; i < items.length; i++) {
+                      const item = items[i];
+                      if (item.kind === "file") {
+                        const file = item.getAsFile();
+                        if (file) files.push(file);
+                      }
+                    }
+                    if (files.length === 0) return;
+
+                    // Build FileList via DataTransfer for existing handleFileSelect
+                    const dt = new DataTransfer();
+                    files.forEach((file) => dt.items.add(file));
+                    const fileList = dt.files;
+
+                    // Call your existing handler
+                    handleFileSelect({
+                      target: { files: fileList },
+                    } as ChangeEvent<HTMLInputElement>);
+                  }}
+                >
+                  {/* Compact View */}
+                  <div className="absolute inset-0 flex items-center justify-center text-center px-2 pointer-events-none">
+                    <span className="text-sm font-semibold group-hover:opacity-0 text-zinc-800 transition-opacity">
+                      {m.name}
+                    </span>
+                  </div>
+
+                  {/* Expanded View */}
+                  <div
+                    className={`
+                      absolute inset-0 flex flex-col items-center justify-center opacity-0
+                      transition-opacity duration-200 px-2
+                      group-hover:opacity-100
+                      ${isDragOver ? "opacity-100" : ""}
+                    `}
+                  >
+                    <span className="text-sm font-semibold text-zinc-800">
+                      {m.name}
+                    </span>
+                    <code className="text-[0.7rem] text-zinc-800 break-words text-center">
+                      ID: {m.id}
+                    </code>
+                    <code className="mt-1 text-[0.7rem] text-zinc-700 bg-white/70 border border-dotted border-black rounded-xl px-2 py-1">
+                      Drop files to send
+                    </code>
+                    <span className="text-[0.7rem]">click to quick create a flight</span>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+        )}
 
-
-{/* section 2 */}
-            <div className=" flex flex-col gap-10 max-w-84">
-
-         
-        <div className="relative flex flex-col items-center  pt-24 rounded-3xl shadow-2xl text-zinc-900 bg-orange-600 min-h-[480px] w-full max-w-md transition-all overflow-hidden ticket-border">
-     
-
+        <div className=" flex flex-col gap-10 max-w-84">
+          <div className="relative flex flex-col items-center  pt-24 rounded-3xl shadow-2xl text-zinc-900 bg-orange-600 min-h-[480px] w-full max-w-md transition-all overflow-hidden ticket-border">
             {/* Ticket Header */}
             <div className="flex flex-col items-center mb-6">
-                <span className="uppercase tracking-widest text-xs font-bold text-zinc-100 opacity-70">airdelivery.site</span>
-                <h2 className="text-3xl font-extrabold tracking-tight text-zinc-100 mt-2 mb-1">Boarding Pass</h2>
-                <span className="text-sm text-zinc-100 opacity-70">Your file transfer ticket</span>
-             
+              <span className="uppercase tracking-widest text-xs font-bold text-zinc-100 opacity-70">
+                airdelivery.site
+              </span>
+              <h2 className="text-3xl font-extrabold tracking-tight text-zinc-100 mt-2 mb-1">
+                {username}
+              </h2>
+              <span className="text-sm text-zinc-100 opacity-70">
+                Your file transfer ticket
+              </span>
             </div>
 
             {/* File and Folder Section */}
             <div className="flex flex-row space-x-4 w-full mb-2 px-8">
-                <label 
-                    className="flex flex-col flex-1 items-center text-zinc-700 px-8 py-3 rounded-xl bg-zinc-100 hover:bg-zinc-100 font-semibold shadow-lg transition-all transform hover:-translate-y-1 cursor-pointer ">
-                    <span>Start sending</span>
-                    <button className="hidden" onClick={handleCreate}/>
-                </label>
-
-        
+              <label className="flex flex-col flex-1 items-center text-zinc-700 px-8 py-3 rounded-xl bg-zinc-100 hover:bg-zinc-100 font-semibold shadow-lg transition-all transform hover:-translate-y-1 cursor-pointer ">
+                <span>
+                  {flightId ? "You are in a fligh ..." : "Start sending"}
+                </span>
+                <button className="hidden" onClick={handleCreate} />
+              </label>
             </div>
 
             <p className="text-xs text-zinc-50 mb-0 tracking-tight uppercase font-mono">
-                Select files or folder to send
+              Select files or folder to send
             </p>
 
             {/* Divider - Ticket Perforation */}
-   
+
             <div className=" w-full flex justify-between items-center h-8">
-                <div className="w-8 h-8 bg-zinc-300 rounded-full -ml-4"></div>
-                 <div className="flex-grow border-t-2 border-dashed border-zinc-200" />
-                <span className="mx-4 text-zinc-50 font-semibold px-2 bg-orange-600 tracking-widest uppercase text-xs">
-                    or
-                </span>
-                <div className="flex-grow border-t-2 border-dashed border-zinc-200" />
-                <div className="w-8 h-8 bg-zinc-300 rounded-full -mr-4"></div>
+              <div className="w-8 h-8 bg-zinc-300 rounded-full -ml-4"></div>
+              <div className="flex-grow border-t-2 border-dashed border-zinc-200" />
+              <span className="mx-4 text-zinc-50 font-semibold px-2 bg-orange-600 tracking-widest uppercase text-xs">
+                or
+              </span>
+              <div className="flex-grow border-t-2 border-dashed border-zinc-200" />
+              <div className="w-8 h-8 bg-zinc-300 rounded-full -mr-4"></div>
             </div>
 
             {/* Receive Section with permanent input */}
             <div className="flex items-center w-full px-8 gap-2 mb-2">
-                <input
-                    type="text"
-                    value={flightCode}
-                    onChange={(e) => setFlightCode(e.target.value)}
-                    placeholder="Flight Id"
-                    className="px-6 py-3 rounded-2xl w-54 bg-zinc-100 outline-0 font-mono text-zinc-800 border border-zinc-300"
-                />
-                <button
-                    onClick={handleJoin}
-                    aria-label="Launch or Send"
-                    className="p-3 rounded-2xl shadow-lg bg-zinc-900 hover:bg-zinc-800 transition">
-                    {/* Paperplane SVG icon */}
-                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" >
-                        <path
-                            d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"
-                            fill="#ffffff"
-                        />
-                    </svg>
-                </button>
+              <input
+                type="text"
+                value={flightCode}
+                readOnly={flightId ? true : false}
+                onChange={(e) => setFlightCode(e.target.value)}
+                placeholder="Flight Id"
+                className="px-6 py-3 rounded-2xl w-54 bg-zinc-100 outline-0 font-mono text-zinc-800 border border-zinc-300"
+              />
+              <button
+                onClick={handleJoin}
+                aria-label="Launch or Send"
+                className="p-3 rounded-2xl shadow-lg bg-zinc-900 hover:bg-zinc-800 transition"
+              >
+                {/* Paperplane SVG icon */}
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+                  <path
+                    d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"
+                    fill="#ffffff"
+                  />
+                </svg>
+              </button>
             </div>
 
             <p className="text-xs text-zinc-50 tracking-tight uppercase font-mono mb-4">
-                Enter your flight code to receive
+              Enter your flight code to receive
             </p>
 
-               <h3 className="text-lg  absolute bottom-5 right-8 font-extrabold tracking-tight text-zinc-100 mt-2 -mb-3">- {username}</h3>
+            <code className="text-xs  absolute bottom-5 right-8  tracking-tight text-zinc-100 mt-2 -mb-3">
+              ID:{user.id}
+            </code>
+          </div>
 
+          <div className="bg-zinc-900 rounded-xl shadow-xl p-4 md:p-5 text-zinc-200 text-sm md:text-base max-w-md w-full space-y-3">
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              About
+            </h2>
+
+            <p className="leading-relaxed text-zinc-400">
+              <span className="text-white font-medium">Airdelivery</span> is a
+              free, encrypted peer-to-peer file sharing tool. Files are sent
+              directly between devices — no uploads, no cloud, just speed and
+              privacy.
+            </p>
+
+            <div className="flex justify-between items-center mt-2">
+              <AboutCard />
+
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                  "Check out Airdelivery.io for fast, private, unlimited P2P file sharing! No hassle, just send or receive. #FileSharing #P2P #Airdelivery"
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-zinc-50 hover:text-orange-400 transition"
+                title="Share on Twitter"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M17.53 3H21l-7.19 8.21L22 21h-6.56l-5.18-6.44L4.47 21H1l7.64-8.73L2 3h6.68l4.74 5.91L17.53 3ZM16.3 19h2.13l-5.82-7.23-1.71 1.98L16.3 19ZM5.09 5l5.38 6.69 1.7-1.97L7.36 5H5.09Z" />
+                </svg>
+              </a>
+            </div>
+          </div>
         </div>
-
-            <div className="bg-zinc-900 rounded-xl shadow-xl p-4 md:p-5 text-zinc-200 text-sm md:text-base max-w-md w-full space-y-3">
-  <h2 className="text-2xl font-bold text-white tracking-tight">About</h2>
-
-  <p className="leading-relaxed text-zinc-400">
-    <span className="text-white font-medium">Airdelivery</span> is a free, encrypted peer-to-peer file sharing tool.
-    Files are sent directly between devices — no uploads, no cloud, just speed and privacy.
-  </p>
-
-  <div className="flex justify-between items-center mt-2">
-    <AboutCard />
-
-    <a
-      href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-        "Check out Airdelivery.io for fast, private, unlimited P2P file sharing! No hassle, just send or receive. #FileSharing #P2P #Airdelivery"
-      )}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-zinc-50 hover:text-orange-400 transition"
-      title="Share on Twitter"
-    >
-      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M17.53 3H21l-7.19 8.21L22 21h-6.56l-5.18-6.44L4.47 21H1l7.64-8.73L2 3h6.68l4.74 5.91L17.53 3ZM16.3 19h2.13l-5.82-7.23-1.71 1.98L16.3 19ZM5.09 5l5.38 6.69 1.7-1.97L7.36 5H5.09Z"/>
-      </svg>
-    </a>
-  </div>
-</div>
-
-               </div>
-        </div>
-    );
+      </div>
+    </div>
+  );
 }

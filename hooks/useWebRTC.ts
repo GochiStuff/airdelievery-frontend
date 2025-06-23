@@ -1,17 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useSocket } from "@/hooks/socketContext";
 import { useRouter } from "next/navigation";
-import { resolve } from "path";
 
 type Candidate = RTCIceCandidateInit;
 
 function userMessage(msg: string) {
   if (msg.includes("DataChannel opened")) return "Connection established";
-  if (msg.includes("Offer sent")) return "Sending offer...";
+  if (msg.includes("Offer sent")) return "Offer sent";
   if (msg.includes("Answer sent")) return "Offer accepted...";
   if (msg.includes("Remote description set")) return "Connection improved";
   if (msg.includes("Added ICE candidate")) return "Connection improved";
-  if (msg.includes("Buffered ICE candidate")) return "Setting up...";
+  if (msg.includes("Buffered ICE candidate")) return "ready to connect...";
   if (msg.includes("Joined signaling")) return "Joined room, waiting";
   if (msg.includes("Failed to join")) return "Failed to join room";
   if (msg.includes("Invalid room code")) return "Invalid room code";
@@ -25,9 +24,10 @@ type Member  = {
 };
 
 export function useWebRTC(
-  code: string,
   onMessage: (e: MessageEvent) => void,
 ) {
+
+  const [flightCode, setFlightCode] = useState<string | null>(null);
   const { socket } = useSocket();
 
   const peer = useRef<RTCPeerConnection | null>(null);
@@ -39,6 +39,10 @@ export function useWebRTC(
 
   // Buffer ICE until we have a remoteDescription
   const queuedCandidates = useRef<RTCIceCandidateInit[]>([]);
+
+  function connectToFlight( code: string ){
+    setFlightCode(code);
+  }
 
   function log(msg: string) {
     const friendly = userMessage(msg);
@@ -69,7 +73,20 @@ export function useWebRTC(
    ]
 }]
 
+
 });
+
+
+if (pc) {
+  pc.onconnectionstatechange = () => {
+    const state = peer.current?.connectionState;
+    console.log("Peer connection state changed:", state);
+    if (state === "disconnected" || state === "failed" || state === "closed") {
+      log("Disconnected");
+      disconnect();
+    }
+  };
+}
 
 
     pc.onicecandidate = e => {
@@ -80,60 +97,74 @@ export function useWebRTC(
     return pc;
   }
 
-  function restartPeer(id: string) {
-    if (peer.current) {
-      peer.current.close();
-    }
-    peer.current = createPeer(id);
-    dataChannel.current = null;
-    queuedCandidates.current = [];
+  // function restartPeer(id: string) {
+  //   if (peer.current) {
+  //     peer.current.close();
+  //   }
+  //   peer.current = createPeer(id);
+  //   dataChannel.current = null;
+  //   queuedCandidates.current = [];
 
-    if (socket?.id === ownerId) {
-      // If sender, restart by creating a new offer
-      initiateSender();
-    }
+  //   if (socket?.id === ownerId) {
+  //     // If sender, restart by creating a new offer
+  //     initiateSender();
+  //   }
+  // }
+
+  function disconnect() {
+  if (peer.current) {
+    peer.current.onicecandidate = null;
+    peer.current.ondatachannel = null;
+    peer.current.close();
+    peer.current = null;
   }
+
+  if (dataChannel.current) {
+    dataChannel.current.onmessage = null;
+    dataChannel.current.onopen = null;
+    dataChannel.current.close();
+    dataChannel.current = null;
+  }
+
+  setFlightCode(null);
+  setStatus("Disconnected");
+  setOwnerId("");
+  setMembers([]);
+  queuedCandidates.current = [];
+
+  socket?.emit("leaveFlight"); 
+}
+
 
   
 
 
-  async function initiateSender() {
-    if (!peer.current) return;
+ async function initiateSender() {
+  if (!peer.current) return;
 
-    dataChannel.current = peer.current.createDataChannel("fileTransfer" , {
-    });
+  dataChannel.current = peer.current.createDataChannel("fileTransfer");
+  dataChannel.current.onopen = () => log("DataChannel opened.");
+  dataChannel.current.onmessage = onMessage;
 
-    dataChannel.current.onopen = () => log("DataChannel opened.");
-    dataChannel.current.onmessage = onMessage;
-
-    const offer = await peer.current.createOffer();
-    await peer.current.setLocalDescription(offer);
-
-    await new Promise (  resolve => { 
-      if(peer.current?.iceGatheringState === "complete"){
-         resolve(null);
-
-      }else{
-        const checkState = () => { 
-                  if (peer.current?.iceGatheringState === "complete") {
-                  peer.current.removeEventListener("icegatheringstatechange", checkState);
-                  resolve(null);
-                }
-              
-        }
-          peer.current?.addEventListener("icegatheringstatechange", checkState);
-
-      }
-    })
-
-    socket?.emit("offer", code, { sdp: peer.current.localDescription });
-
+  const offer = await peer.current.createOffer();
+  await peer.current.setLocalDescription(offer);
+  log("Preparing offer...")
+  // Emit offer immediately — don't wait for full ICE
+  if (peer.current.localDescription) {
+    socket?.emit("offer", flightCode, { sdp: peer.current.localDescription });
     log("Offer sent.");
+  } else {
   }
+}
+
 
   async function refreshNearby() {
     socket?.emit("getNearbyUsers");
+    console.log("GET ");
+    
   }
+
+  
 
   // Handle when we get an offer (receiver side).
   async function handleOffer(id: string, sdp: RTCSessionDescriptionInit) {
@@ -147,7 +178,7 @@ export function useWebRTC(
     await peer.current.setRemoteDescription(sdp);
     const answer = await peer.current.createAnswer();
     await peer.current.setLocalDescription(answer);
-    socket?.emit("answer", code, { sdp: answer });
+    socket?.emit("answer", flightCode, { sdp: answer });
 
     log("Answer sent.");
   }
@@ -201,15 +232,29 @@ export function useWebRTC(
   }
 
 
+
   const router = useRouter();
   useEffect(() => {
     if (!socket) return;
 
-    if (!code) {
+    socket.on("nearbyUsers" , ( users : Member[] ) => {
+      setNearByUsers(users);
+      console.log("SET" , users);
+    })  
+
+  
+
+    if (!flightCode) {
       log("Invalid room code.");
-      return;
+      return () => {
+              socket.off("nearbyUsers");
+      };
     }
-    socket.emit("joinFlight", code, (resp: { success: boolean; message?: string }) => {
+    
+
+   
+
+    socket.emit("joinFlight", flightCode, (resp: { success: boolean; message?: string }) => {
       if (resp.success) {
         log("Joined signaling.");
       } else {
@@ -221,24 +266,8 @@ export function useWebRTC(
       }
     });
 
-    socket.on("flightUsers", ({ ownerId: oid, members: m }) => {
-      setOwnerId(oid);
-      setMembers(m);
-      log(`Members in room: ${m.length}`);
+    console.log("JOINED FLIGHT")
 
-      if (socket?.id === oid && !peer.current) {
-        // Initiate as sender
-        peer.current = createPeer(oid);
-        initiateSender();
-      }
-
-      socket.emit("getNearbyUsers");
-    });
-    socket.on("nearbyUsers" , ( users : Member[] ) => {
-      setNearByUsers(users);
-    })
-
-    
 
 
     socket.on("offer", async (id, { sdp }) => {
@@ -253,18 +282,34 @@ export function useWebRTC(
       await handleIce(id, candidate);
     });
 
+        
+    socket.on("flightUsers", ({ ownerId: oid, members: m }) => {
+      setOwnerId(oid);
+      setMembers(m);
+      log(`Members in room: ${m.length}`);
+
+      if (socket?.id === oid && !peer.current) {
+        // Initiate as sender
+        peer.current = createPeer(oid);
+        initiateSender();
+      }
+
+      socket.emit("getNearbyUsers");
+    });
+
     return () => {
       socket.off("flightUsers");
       socket.off("offer");
       socket.off("answer");
       socket.off("ice-candidate");
+      socket.off("nearbyUsers");
 
       if (peer.current) {
         peer.current.close();
         peer.current = null;
       }
     };
-  }, [socket, code]);
+  }, [socket, flightCode]);
 
   return { 
     dataChannel: dataChannel.current, 
@@ -272,9 +317,11 @@ export function useWebRTC(
     nearByUsers,
     inviteToFlight,
     sendFeedback,
+    connectToFlight,
     refreshNearby,
-    
+    disconnect,
     members, 
-    restartPeer 
+    // restartPeer 
+    
   };
 }

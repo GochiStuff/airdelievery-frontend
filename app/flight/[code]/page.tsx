@@ -1,6 +1,6 @@
 "use client"
-import React, { useState } from "react";
-import { useParams } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
   File,
   Folder,
@@ -12,14 +12,13 @@ import {
   Play,
   Pause,
   RefreshCwIcon,
-  DownloadIcon,
   Download,
-  LucideFolderOpen,
+  LogOut,
+
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { useWebRTC } from "@/hooks/useWebRTC";
-import { useFileTransfer } from "@/hooks/useFileTransfer";
 import { Switch } from "@/components/ui/switch";
+import { useWebRTCContext } from "@/context/WebRTCContext";
 
 export default function RoomPage() {
   const { code } = useParams();
@@ -46,13 +45,46 @@ export default function RoomPage() {
       }, 5000);
     };
 
+    const router = useRouter()
 
 
   const [isSpinning, setIsSpinning] = useState(false);
+  const [isLeft, setIsLeft] = useState(false);
 
-  // WebRTC and file transfer hooks
-  const { dataChannel, status, members, refreshNearby, inviteToFlight, nearByUsers , sendFeedback } = useWebRTC(flight, e => fileTrans.handleMessage(e));
-  const fileTrans = useFileTransfer(dataChannel);
+  
+
+  const { handleFileSelect,meta , leaveFlight, connectToFlight,  cancelReceive , cancelTransfer , recvQueue , queue , autoDownload ,setAutoDownload , downloadAll, downloadFile , resumeTransfer , pauseTransfer,   status , members , openFile ,refreshNearby , inviteToFlight  , nearByUsers , sendFeedback  , flightId}  = useWebRTCContext();
+
+  const handleLeave = () => {
+    setIsLeft(true);
+    leaveFlight();
+    router.push('/');
+  }
+useEffect(() => {
+  if (!flight) return;
+
+  if (flightId === flight) return;
+  
+  if( isLeft) return;
+
+  const handleSwitch =  () => {
+    if (flightId && flightId !== flight) {
+      const leave = confirm(
+        `You are already in flight "${flightId}". Leave it and join "${flight}"?`
+      );
+      if (leave) {
+        leaveFlight();  
+        connectToFlight(flight);
+      } else {
+        router.push(`/flight/${flightId}`);
+      }
+    } else {
+      connectToFlight(flight);
+    }
+  };
+
+  handleSwitch();
+}, [flight, flightId, connectToFlight, leaveFlight, router]);
 
   const handleRefresh = () => {
     setIsSpinning(true);
@@ -84,7 +116,7 @@ export default function RoomPage() {
             
             
             {/* Share Button */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center ">
               <button
           onClick={() => setShowQR(prev => !prev)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 hover:from-orange-600 hover:to-orange-500 text-white font-semibold shadow-lg transition"
@@ -93,6 +125,17 @@ export default function RoomPage() {
           <span>Invite</span>
               </button>
               <span className="text-xs text-zinc-500 mt-1">Show QR / Code</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <button
+          onClick={handleLeave}
+
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-800 hover:from-zinc-600 hover:to-zinc-500 text-white font-semibold shadow-lg transition"
+              >
+          <LogOut className="w-5 h-5" />
+          <span>Leave</span>
+              </button>
+              <span className="text-xs text-zinc-500 mt-1">leave the flight</span>
             </div>
           </div>
         </header>
@@ -263,7 +306,7 @@ export default function RoomPage() {
                 e.preventDefault();
                 e.stopPropagation();
                 const files = Array.from(e.dataTransfer.files);
-                fileTrans.handleFileSelect({ target: { files } } as any);
+                handleFileSelect({ target: { files } } as any);
               }}
             >
               <Folder className="w-12 h-12 text-orange-500 mb-3" />
@@ -273,7 +316,7 @@ export default function RoomPage() {
                 <label className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-5 py-2 cursor-pointer flex items-center gap-2 text-sm font-medium transition">
                   <File className="w-4 h-4" />
                   <span>Select Files</span>
-                  <input type="file" multiple hidden onChange={fileTrans.handleFileSelect} />
+                  <input type="file" multiple hidden onChange={handleFileSelect} />
                 </label>
                 <label className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-5 py-2 cursor-pointer flex items-center gap-2 text-sm font-medium transition">
                   <Folder className="w-4 h-4" />
@@ -284,7 +327,7 @@ export default function RoomPage() {
                     hidden
                     //@ts-ignore
                     webkitdirectory="true"
-                    onChange={fileTrans.handleFileSelect}
+                    onChange={handleFileSelect}
                   />
                 </label>
               </div>
@@ -293,7 +336,7 @@ export default function RoomPage() {
           </div>
 
           {/* Users Panel */}
-          <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col">
+          <div className="bg-white rounded-3xl shadow-sm p-5 max-h-72 flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-orange-500" />
@@ -305,7 +348,7 @@ export default function RoomPage() {
                 <RefreshCwIcon className={`w-5 h-5 ${isSpinning ? "animate-spin" : "transition-transform"}`} />
               </button>}
             </div>
-            <div className="flex flex-col gap-3 overflow-y-auto">
+            <div className="flex flex-col gap-3  overflow-y-auto">
               {(members.length <= 1 ? nearByUsers : members).length === 0 ? (
                 <div className="text-zinc-400 text-sm text-center py-6">{members.length <= 1 ? "No nearby users" : "No members"}</div>
               ) : (
@@ -330,8 +373,8 @@ export default function RoomPage() {
 
          {/* Queue Preview under Upload */}
             <div className="mt-6 w-full space-y-6">
-              <QueueTray title="Sending Queue" items={fileTrans.queue} pauseTransfer={fileTrans.pauseTransfer} resumeTransfer={fileTrans.resumeTransfer} cancelTransfer={fileTrans.cancelTransfer} reciver={false} />
-              <QueueTray title="Receiver Queue"  setAutoDownload={fileTrans.setAutoDownload} autoDownload={fileTrans.autoDownload} openfile={fileTrans.openFile} fileDownload={fileTrans.downloadFile} items={fileTrans.recvQueue} cancelTransfer={fileTrans.cancelTransfer} reciver={true} />
+              <QueueTray title="Sending Queue" items={queue} pauseTransfer={pauseTransfer} resumeTransfer={resumeTransfer} cancelTransfer={cancelTransfer} reciver={false} />
+              <QueueTray title="Receiver Queue"  setAutoDownload={setAutoDownload} autoDownload={autoDownload} openfile={openFile} fileDownload={downloadFile} items={recvQueue} cancelTransfer={cancelTransfer} reciver={true} />
             </div>
 
         {/* Metrics and Info */}
@@ -339,14 +382,14 @@ export default function RoomPage() {
           <div className="bg-white rounded-3xl shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4">Overall Metrics</h2>
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <Metric label="Sent" value={`${(fileTrans.meta.totalSent / 1e9).toFixed(2)} GB`} />
-              <Metric label="Received" value={`${(fileTrans.meta.totalReceived / 1e9).toFixed(2)} GB`} />
+              <Metric label="Sent" value={`${(meta.totalSent / 1e9).toFixed(2)} GB`} />
+              <Metric label="Received" value={`${(meta.totalReceived / 1e9).toFixed(2)} GB`} />
               <Metric
                 label="Sending speed"
                 value={
-                  fileTrans.meta.speedBps >= 1048576
-                    ? `${(fileTrans.meta.speedBps / 1048576).toFixed(2)} MB/s`
-                    : `${(fileTrans.meta.speedBps / 1024).toFixed(2)} KB/s`
+                  meta.speedBps >= 1048576
+                    ? `${(meta.speedBps / 1048576).toFixed(2)} MB/s`
+                    : `${(meta.speedBps / 1024).toFixed(2)} KB/s`
                 }
               />
             </div>

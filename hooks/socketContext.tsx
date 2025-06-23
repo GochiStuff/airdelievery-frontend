@@ -59,6 +59,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
         setuser(user);
     });
 
+    
+
     setSocket(newSocket);
     };
 
