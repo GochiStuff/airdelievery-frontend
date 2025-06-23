@@ -146,6 +146,7 @@ export default function MainPage() {
 
       <div className="flex relative items-center sm:items-start flex-col md:flex-row gap-2">
                 {/* nearByUsers grid */}
+              
         {!flightId && (
           <div
             className="
@@ -157,6 +158,7 @@ export default function MainPage() {
               max-w-screen
             "
           >
+            { nearByUsers.length === 0 &&<p className="text-sm animete-fadeIn md:-rotate-90 font-mono md:mt-10 md:h-5"> No user nearby</p>}
             {nearByUsers.map((m) => {
               const isDragOver = dragOverId === m.id;
               return (
