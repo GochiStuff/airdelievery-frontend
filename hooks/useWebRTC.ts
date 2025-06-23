@@ -5,9 +5,10 @@ type Candidate = RTCIceCandidateInit;
 
 function userMessage(msg: string) {
   if (msg.includes("DataChannel opened")) return "Connection established";
+  if (msg.includes("Connected")) return "Connection established";
   if (msg.includes("Offer sent")) return "Offer sent";
   if (msg.includes("Answer sent")) return "Offer accepted...";
-  if (msg.includes("Remote description set")) return "Connection improved";
+  if (msg.includes("Remote description set")) return "finalizing...";
   if (msg.includes("Added ICE candidate")) return "Connection improved";
   if (msg.includes("Buffered ICE candidate")) return "ready to connect...";
   if (msg.includes("Joined signaling")) return "Joined room, waiting";
@@ -84,6 +85,10 @@ if (pc) {
       log("Disconnected");
       disconnect();
     }
+
+    if(state === "connected"){
+      log("Connected")
+    }
   };
 }
 
@@ -128,18 +133,22 @@ if (pc) {
  async function initiateSender() {
   if (!peer.current) return;
 
+  console.log("DATA CHANEELS OPEN");
   dataChannel.current = peer.current.createDataChannel("fileTransfer");
   dataChannel.current.onopen = () => log("DataChannel opened.");
   dataChannel.current.onmessage = onMessage;
 
   const offer = await peer.current.createOffer();
   await peer.current.setLocalDescription(offer);
+
   log("Preparing offer...")
   // Emit offer immediately — don't wait for full ICE
   if (peer.current.localDescription) {
+    console.log("PREPARING OFFERR" , peer.current.localDescription )
     socket?.emit("offer", flightCode, { sdp: peer.current.localDescription });
     log("Offer sent.");
   } else {
+    log("failed preparing offer.");
   }
 }
 
@@ -155,14 +164,19 @@ if (pc) {
   async function handleOffer(id: string, sdp: RTCSessionDescriptionInit) {
     peer.current = createPeer(id);
 
+    console.log("DATA CHANNEL OPEN")
     peer.current.ondatachannel = e => {
       dataChannel.current = e.channel;
       e.channel.onmessage = onMessage;
       e.channel.onopen = () => log("DataChannel opened")
     }
+
+    console.log("SET REMOTE DESCRIPTION" , sdp);
     await peer.current.setRemoteDescription(sdp);
     const answer = await peer.current.createAnswer();
+
     await peer.current.setLocalDescription(answer);
+    
 await new Promise(resolve => {
   if (peer.current?.iceGatheringState === 'complete') {
     resolve(null);
@@ -176,6 +190,7 @@ await new Promise(resolve => {
     peer.current?.addEventListener('icegatheringstatechange', checkState);
   }
 });
+console.log("ANSER EMIT : " , answer);
 socket?.emit("answer", flightCode, { sdp: answer });
 log("Answer sent.");
 
@@ -272,29 +287,31 @@ log("Answer sent.");
       }
     });
 
-    console.log("JOINED FLIGHT")
-
-
 
     socket.on("offer", async (id, { sdp }) => {
+      console.log("OFFER RECIVED " , sdp);
       await handleOffer(id, sdp.sdp);
     });
 
     socket.on("answer", async ({ sdp }) => {
+      console.log("ANSWER RECIVED" , sdp);
       await handleAnswer(sdp);
     });
 
     socket.on("ice-candidate", async ({ candidate, id }) => {
+      console.log("ICE CANDIDATE", candidate );
       await handleIce(id, candidate);
     });
 
         
     socket.on("flightUsers", ({ ownerId: oid, members: m }) => {
+      console.log("FLIGHT USERS ", oid,m);
       setOwnerId(oid);
       setMembers(m);
 
       if (socket?.id === oid && !peer.current) {
         // Initiate as sender
+        console.log("OWNER INITIATE SENDING ")
         peer.current = createPeer(oid);
         initiateSender();
       }
