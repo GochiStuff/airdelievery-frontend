@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSocket } from "@/hooks/socketContext";
 import { useRouter } from "next/navigation";
-
 type Candidate = RTCIceCandidateInit;
 
 function userMessage(msg: string) {
@@ -178,9 +177,22 @@ if (pc) {
     await peer.current.setRemoteDescription(sdp);
     const answer = await peer.current.createAnswer();
     await peer.current.setLocalDescription(answer);
-    socket?.emit("answer", flightCode, { sdp: answer });
+await new Promise(resolve => {
+  if (peer.current?.iceGatheringState === 'complete') {
+    resolve(null);
+  } else {
+    const checkState = () => {
+      if (peer.current?.iceGatheringState === 'complete') {
+        peer.current.removeEventListener('icegatheringstatechange', checkState);
+        resolve(null);
+      }
+    };
+    peer.current?.addEventListener('icegatheringstatechange', checkState);
+  }
+});
+socket?.emit("answer", flightCode, { sdp: answer });
+log("Answer sent.");
 
-    log("Answer sent.");
   }
 
   // Handle when we get an answer (sender side).
@@ -286,7 +298,6 @@ if (pc) {
     socket.on("flightUsers", ({ ownerId: oid, members: m }) => {
       setOwnerId(oid);
       setMembers(m);
-      log(`Members in room: ${m.length}`);
 
       if (socket?.id === oid && !peer.current) {
         // Initiate as sender
