@@ -58,6 +58,7 @@ export function useWebRTC(
     const TURN_CREDENTIAL = process.env.NEXT_PUBLIC_TURN_CREDENTIAL || "";
 
   
+  
     const pc = new RTCPeerConnection({ iceServers: [{
    urls: [ "stun:bn-turn2.xirsys.com" ]
 }, {
@@ -66,10 +67,6 @@ export function useWebRTC(
    urls: [
        "turn:bn-turn2.xirsys.com:80?transport=udp",
        "turn:bn-turn2.xirsys.com:3478?transport=udp",
-       "turn:bn-turn2.xirsys.com:80?transport=tcp",
-       "turn:bn-turn2.xirsys.com:3478?transport=tcp",
-       "turns:bn-turn2.xirsys.com:443?transport=tcp",
-       "turns:bn-turn2.xirsys.com:5349?transport=tcp"
    ]
 }]
 
@@ -143,8 +140,24 @@ if (pc) {
 
   log("Preparing offer...")
   // Emit offer immediately — don't wait for full ICE
+
   if (peer.current.localDescription) {
     console.log("PREPARING OFFERR" , peer.current.localDescription )
+
+    await new Promise(resolve => {
+    if (peer.current?.iceGatheringState === 'complete') {
+      resolve(null);
+    } else {
+      const checkState = () => {
+        if (peer.current?.iceGatheringState === 'complete') {
+          peer.current?.removeEventListener('icegatheringstatechange', checkState);
+          resolve(null);
+        }
+      };
+      peer.current?.addEventListener('icegatheringstatechange', checkState);
+    }
+  });
+
     socket?.emit("offer", flightCode, { sdp: peer.current.localDescription });
     log("Offer sent.");
   } else {
@@ -173,6 +186,7 @@ if (pc) {
 
     console.log("SET REMOTE DESCRIPTION" , sdp);
     await peer.current.setRemoteDescription(sdp);
+    flushBufferedCandidates();
     const answer = await peer.current.createAnswer();
 
     await peer.current.setLocalDescription(answer);
@@ -202,6 +216,7 @@ log("Answer sent.");
     try {
       console.log("Received answer SDP", sdp);
       await peer.current.setRemoteDescription(sdp);
+      flushBufferedCandidates();
       console.log("Remote description set successfully");
       queuedCandidates.current.splice(0).forEach(candidate => {
         peer.current?.addIceCandidate(new RTCIceCandidate(candidate)).catch(log);
@@ -231,6 +246,18 @@ log("Answer sent.");
     console.error("Failed to add ICE candidate", err);
   }
 }
+
+const flushBufferedCandidates = async () => {
+  for (const c of queuedCandidates.current) {
+    try {
+      await peer.current?.addIceCandidate(new RTCIceCandidate(c));
+    } catch (e) {
+      console.error("Failed to add buffered ICE", e);
+    }
+  }
+  queuedCandidates.current = [];
+};
+
 
 
   async function inviteToFlight(user: Member, currentFlightCode: string): Promise<void> {
