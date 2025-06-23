@@ -77,7 +77,7 @@ export function useWebRTC(
 if (pc) {
   pc.onconnectionstatechange = () => {
     const state = peer.current?.connectionState;
-    console.log("Peer connection state changed:", state);
+    // console.log("Peer connection state changed:", state);
     if (state === "disconnected" || state === "failed" || state === "closed") {
       log("Disconnected");
       disconnect();
@@ -130,7 +130,6 @@ if (pc) {
  async function initiateSender() {
   if (!peer.current) return;
 
-  console.log("DATA CHANEELS OPEN");
   dataChannel.current = peer.current.createDataChannel("fileTransfer");
   dataChannel.current.onopen = () => log("DataChannel opened.");
   dataChannel.current.onmessage = onMessage;
@@ -142,7 +141,6 @@ if (pc) {
   // Emit offer immediately — don't wait for full ICE
 
   if (peer.current.localDescription) {
-    console.log("PREPARING OFFERR" , peer.current.localDescription )
 
     await new Promise(resolve => {
     if (peer.current?.iceGatheringState === 'complete') {
@@ -177,14 +175,12 @@ if (pc) {
   async function handleOffer(id: string, sdp: RTCSessionDescriptionInit) {
     peer.current = createPeer(id);
 
-    console.log("DATA CHANNEL OPEN")
     peer.current.ondatachannel = e => {
       dataChannel.current = e.channel;
       e.channel.onmessage = onMessage;
       e.channel.onopen = () => log("DataChannel opened")
     }
 
-    console.log("SET REMOTE DESCRIPTION" , sdp);
     await peer.current.setRemoteDescription(sdp);
     flushBufferedCandidates();
     const answer = await peer.current.createAnswer();
@@ -204,7 +200,6 @@ await new Promise(resolve => {
     peer.current?.addEventListener('icegatheringstatechange', checkState);
   }
 });
-console.log("ANSER EMIT : " , answer);
 socket?.emit("answer", flightCode, { sdp: answer });
 log("Answer sent.");
 
@@ -214,10 +209,8 @@ log("Answer sent.");
   async function handleAnswer(sdp: RTCSessionDescriptionInit) {
   if (peer.current) {
     try {
-      console.log("Received answer SDP", sdp);
       await peer.current.setRemoteDescription(sdp);
       flushBufferedCandidates();
-      console.log("Remote description set successfully");
       queuedCandidates.current.splice(0).forEach(candidate => {
         peer.current?.addIceCandidate(new RTCIceCandidate(candidate)).catch(log);
       });
@@ -234,7 +227,6 @@ log("Answer sent.");
  async function handleIce(id: string, candidate: Candidate) {
   try {
 
-    console.log("Received ICE candidate:", candidate);
     if (peer.current?.remoteDescription) {
       await peer.current.addIceCandidate(new RTCIceCandidate(candidate));
       log("Added ICE candidate");
@@ -316,29 +308,24 @@ const flushBufferedCandidates = async () => {
 
 
     socket.on("offer", async (id, { sdp }) => {
-      console.log("OFFER RECIVED " , sdp);
       await handleOffer(id, sdp.sdp);
     });
 
     socket.on("answer", async ({ sdp }) => {
-      console.log("ANSWER RECIVED" , sdp);
       await handleAnswer(sdp);
     });
 
     socket.on("ice-candidate", async ({ candidate, id }) => {
-      console.log("ICE CANDIDATE", candidate );
       await handleIce(id, candidate);
     });
 
         
     socket.on("flightUsers", ({ ownerId: oid, members: m }) => {
-      console.log("FLIGHT USERS ", oid,m);
       setOwnerId(oid);
       setMembers(m);
 
       if (socket?.id === oid && !peer.current) {
         // Initiate as sender
-        console.log("OWNER INITIATE SENDING ")
         peer.current = createPeer(oid);
         initiateSender();
       }
