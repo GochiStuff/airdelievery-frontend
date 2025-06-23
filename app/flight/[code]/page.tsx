@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   File,
@@ -14,6 +14,9 @@ import {
   RefreshCwIcon,
   Download,
   LogOut,
+  ArrowUp,
+  ArrowDown,
+  Gauge,
 
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -96,53 +99,59 @@ useEffect(() => {
     <main className="min-h-screen bg-gray-200 text-zinc-900 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
-        <header className="flex flex-col md:flex-row justify-between items-center bg-white rounded-2xl shadow-xl p-8 mb-6 ">
-          {/* Left: Flight Info */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-extrabold tracking-wider flex items-center gap-2">
-          FLIGHT <span className="bg-zinc-100 font-mono text-zinc-700 px-2 py-1 rounded-lg border border-zinc-200">{flight}</span>
-              </h1>
-            </div>
-            <div className="flex items-center gap-3 mt-1 line-clamp-1">
-              <Badge color={typeof status === "string" && status.includes("Connection") ? "green" : "yellow"}>{status}</Badge>
-              <Badge color="gray">{members.length} Member{members.length !== 1 ? "s" : ""}</Badge>
-            </div>
-          
-          </div>
+     <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white rounded-2xl shadow-xl p-6 sm:p-8 gap-6 mb-6 transition-all">
+  {/* Left: Flight Info */}
+  <div className="flex flex-col gap-3 w-full md:w-auto">
+    <div className="flex flex-wrap items-center gap-3">
+      <h1 className="text-2xl sm:text-4xl font-extrabold tracking-wide flex items-center gap-2">
+        FLIGHT
+        <span className="bg-zinc-100  text-1xl  sm:text-3xl font-mono text-zinc-700 px-2 py-1 rounded-lg border border-zinc-200 ">
+          {flight}
+        </span>
+      </h1>
+    </div>
+    <div className="flex flex-wrap items-center gap-3 mt-1 text-sm">
+      <Badge color={typeof status === "string" && status.includes("Connection") ? "green" : "yellow"}>
+        {status}
+      </Badge>
+      <Badge color="gray">
+        {members.length} Member{members.length !== 1 ? "s" : ""}
+      </Badge>
+    </div>
+  </div>
 
-          {/* Right: Owner, Members, Share */}
-          <div className="flex flex-col md:flex-row items-center gap-8 mt-6 md:mt-0">
-            
-            
-            {/* Share Button */}
-            <div className="flex flex-col items-center ">
-              <button
-          onClick={() => setShowQR(prev => !prev)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 hover:from-orange-600 hover:to-orange-500 text-white font-semibold shadow-lg transition"
-              >
-          <Share2 className="w-5 h-5" />
-          <span>Invite</span>
-              </button>
-              <span className="text-xs text-zinc-500 mt-1">Show QR / Code</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <button
-          onClick={handleLeave}
+  {/* Right: Buttons */}
+  <div className="flex flex-wrap md:flex-nowrap items-start sm:items-center justify-start md:justify-end gap-3 md:gap-6 w-full md:w-auto">
+    {/* Share Button */}
+    <div className="flex flex-col items-start sm:items-center">
+      <button
+        onClick={() => setShowQR(prev => !prev)}
+        className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-md transition duration-200"
+      >
+        <Share2 className="w-5 h-5" />
+        <span className="text-sm">Invite</span>
+      </button>
+      <span className="text-xs hidden md:inline text-zinc-500 mt-1 sm:text-center">Show QR / Code</span>
+    </div>
 
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-800 hover:from-zinc-600 hover:to-zinc-500 text-white font-semibold shadow-lg transition"
-              >
-          <LogOut className="w-5 h-5" />
-          <span>Leave</span>
-              </button>
-              <span className="text-xs text-zinc-500 mt-1">leave the flight</span>
-            </div>
-          </div>
-        </header>
+    {/* Leave Button */}
+    <div className="flex flex-col items-start sm:items-center">
+      <button
+        onClick={handleLeave}
+        className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold shadow-md transition duration-200"
+      >
+        <LogOut className="w-5 h-5" />
+        <span className="hidden text-sm md:inline">Leave</span>
+      </button>
+      <span className="text-xs hidden md:inline text-zinc-500 mt-1 sm:text-center">Leave the flight</span>
+    </div>
+  </div>
+</header>
+
 
         {/* Share QR Popup */}
         {showQR && (
-          <div className="fixed inset-0 bg-zinc-900/60 h-screen flex items-center justify-center z-50">
+          <div className="fixed animate-fadeIn inset-0 bg-zinc-900/60 h-screen flex items-center justify-center z-50">
             <div className="relative bg-white rounded-3xl shadow-2xl p-8 w-full max-w-xs flex flex-col items-center border-2 border-orange-400">
      
               <button
@@ -295,9 +304,9 @@ useEffect(() => {
         {/* Main Content: Upload + Users + Queue */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Upload Area */}
-          <div className="col-span-1 lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm flex flex-col items-center justify-center">
+          <div className="col-span-1  lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm flex flex-col items-center justify-center">
             <div
-              className="w-full  h-56 flex flex-col items-center justify-center border-2 border-dashed border-orange-400 rounded-2xl bg-white hover:bg-orange-50 transition cursor-pointer p-6 text-center"
+              className="w-full h-52  flex flex-col items-center justify-center border-2 border-dashed border-orange-400 rounded-2xl bg-white hover:bg-orange-50 transition cursor-pointer p-6 text-center"
               onDragOver={e => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -336,7 +345,7 @@ useEffect(() => {
           </div>
 
           {/* Users Panel */}
-          <div className="bg-white rounded-3xl shadow-sm p-5 max-h-72 flex flex-col">
+          <div className="bg-white rounded-3xl shadow-sm p-5 max-h-76 flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-orange-500" />
@@ -379,22 +388,8 @@ useEffect(() => {
 
         {/* Metrics and Info */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-3xl shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Overall Metrics</h2>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <Metric label="Sent" value={`${(meta.totalSent / 1e9).toFixed(2)} GB`} />
-              <Metric label="Received" value={`${(meta.totalReceived / 1e9).toFixed(2)} GB`} />
-              <Metric
-                label="Sending speed"
-                value={
-                  meta.speedBps >= 1048576
-                    ? `${(meta.speedBps / 1048576).toFixed(2)} MB/s`
-                    : `${(meta.speedBps / 1024).toFixed(2)} KB/s`
-                }
-              />
-            </div>
-          </div>
-          <div className="bg-white rounded-3xl shadow-md p-6 flex flex-col justify-between">
+            <MetricsSection meta={meta} />
+          <div className="relative bg-white rounded-3xl shadow-md p-6 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <Heart className="w-8 h-8 text-zinc-400" />
@@ -450,13 +445,7 @@ useEffect(() => {
               </button>
              
             </div>
-             {/* <button
-                className="flex-1 mt-2 gap-2  text-zinc-900 font-medium"
-                onClick={ () => setShowFeedback(true)}
-                  
-              >
-              report / feedback
-              </button> */}
+            
           </div>
         </section>
       </div>
@@ -665,12 +654,60 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
     </div>
   );
 }
-
-function Metric({ label, value }: { label: string; value: string }) {
+// MetricsSection with modern card UI
+function MetricsSection({ meta }: { meta: any }) {
   return (
-    <div className="flex flex-col items-center gap-1 bg-zinc-100 rounded-2xl p-3">
-      <span className="text-xs text-zinc-500">{label}</span>
-      <span className="font-mono text-lg text-orange-600">{value}</span>
+    <div className="bg-white rounded-3xl shadow-sm p-5 max-h-72 flex flex-col">
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-bold text-zinc-800">Overall Metrics</h2>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 overflow-y-auto">
+        <MetricCard
+          label="Sent"
+          value={`${(meta.totalSent / 1e9).toFixed(2)} GB`}
+          icon={<ArrowUp className="w-5 h-5 text-orange-500" />}
+        />
+        <MetricCard
+          label="Received"
+          value={`${(meta.totalReceived / 1e9).toFixed(2)} GB`}
+          icon={<ArrowDown className="w-5 h-5 text-orange-500" />}
+        />
+        <MetricCard
+          label="Speed"
+          value={
+            meta.speedBps >= 1048576
+              ? `${(meta.speedBps / 1048576).toFixed(2)} MB/s`
+              : `${(meta.speedBps / 1024).toFixed(2)} KB/s`
+          }
+          icon={<Gauge className="w-5 h-5 text-orange-500" />}
+        />
+      </div>
+    </div>
+  );
+}
+
+// MetricCard styled as scrollable list item
+function MetricCard({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div className="w-full flex items-center gap-3 rounded-xl px-3 py-2 border border-zinc-200 hover:border-orange-400 hover:bg-orange-50 transition bg-white text-left">
+      <div className="bg-orange-100 p-1 rounded-full">
+        {icon}
+      </div>
+      <div className="flex flex-col items-start">
+        <span className="text-sm font-medium text-zinc-900 truncate">{label}</span>
+        <span className="text-xs text-zinc-500 font-mono truncate">{value}</span>
+      </div>
     </div>
   );
 }

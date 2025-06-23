@@ -77,20 +77,20 @@ export default function MainPage() {
   return (
     <div className="relative flex  mb-10 flex-col md:flex-row items-center max-w-9xl mx-auto  justify-around min-h-screen overflow-hidden">
       {invitationPop}
-     {flightId && (
-  <div className="absolute top-5 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
-    <div className="backdrop-blur-md bg-white/60 border border-zinc-300/60 hover:shadow-xl transition-all shadow-md rounded-full px-6 py-3 flex items-center justify-between space-x-4 text-sm text-zinc-800">
-      {/* Flight Info */}
-      <div className="flex-1">
-        <div className="font-semibold">
-          In Flight:&nbsp;
-          <code className="font-mono text-orange-500">{flightId}</code>
+  {flightId && (
+  <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm px-4">
+    <div className="flex animate-fadeIn items-center  justify-between px-6 py-3 backdrop-blur-lg bg-white/30 border border-white/20 rounded-full shadow-[0_8px_32px_rgba(31,38,135,0.2)] transition-all duration-300 hover:shadow-[0_12px_48px_rgba(31,38,135,0.3)] text-sm text-zinc-800 space-x-4">
+      
+      {/* Left Side - Flight Info */}
+      <div className="flex-1 min-w-0">
+        <div className="text-[14px] font-semibold truncate text-black/90">
+          Flight: <code className="text-orange-500 font-mono">{flightId}</code>
         </div>
-        <div className="text-xs text-black/60 mt-1">
+        <div className="text-[12px] font-medium mt-0.5">
           <span
-            className={`font-medium ${
+            className={`${
               status.includes("Connection")
-                ? "text-green-700"
+                ? "text-green-600"
                 : status.includes("Failed") || status.includes("Disconnected")
                 ? "text-red-600"
                 : "text-yellow-500"
@@ -101,17 +101,17 @@ export default function MainPage() {
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex-shrink-0 flex gap-2">
+      {/* Right Side - Buttons */}
+      <div className="flex gap-2">
         <button
           onClick={() => router.push(`flight/${flightId}`)}
-          className="px-3 py-1 rounded-md bg-zinc-100 text-black/70 hover:bg-zinc-200 transition font-medium shadow-inner"
+          className="px-3 py-1.5 rounded-full bg-zinc-100/60 hover:bg-zinc-200 text-zinc-900 text-xs font-semibold transition duration-200 shadow-inner"
         >
           Open
         </button>
         <button
           onClick={handleLeaveFlight}
-          className="px-3 py-1 rounded-md bg-red-500/10 text-red-600 hover:bg-red-500/20 transition font-medium shadow-inner"
+          className="px-3 py-1.5 rounded-full bg-red-100/70 hover:bg-red-200 text-red-600 text-xs font-semibold transition duration-200 shadow-inner"
         >
           Leave
         </button>
@@ -119,6 +119,8 @@ export default function MainPage() {
     </div>
   </div>
 )}
+
+
 
 
       {/* Tagline background */}
