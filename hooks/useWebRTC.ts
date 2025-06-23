@@ -96,19 +96,6 @@ if (pc) {
     return pc;
   }
 
-  // function restartPeer(id: string) {
-  //   if (peer.current) {
-  //     peer.current.close();
-  //   }
-  //   peer.current = createPeer(id);
-  //   dataChannel.current = null;
-  //   queuedCandidates.current = [];
-
-  //   if (socket?.id === ownerId) {
-  //     // If sender, restart by creating a new offer
-  //     initiateSender();
-  //   }
-  // }
 
   function disconnect() {
   if (peer.current) {
@@ -159,7 +146,6 @@ if (pc) {
 
   async function refreshNearby() {
     socket?.emit("getNearbyUsers");
-    console.log("GET ");
     
   }
 
@@ -197,19 +183,28 @@ log("Answer sent.");
 
   // Handle when we get an answer (sender side).
   async function handleAnswer(sdp: RTCSessionDescriptionInit) {
-    if (peer.current) {
+  if (peer.current) {
+    try {
+      console.log("Received answer SDP", sdp);
       await peer.current.setRemoteDescription(sdp);
-      // Drain queued ICE
+      console.log("Remote description set successfully");
       queuedCandidates.current.splice(0).forEach(candidate => {
         peer.current?.addIceCandidate(new RTCIceCandidate(candidate)).catch(log);
       });
       log("Remote description set.");
+    } catch (e) {
+      console.error("Failed to set remote description", e);
+      log("Failed to set remote description");
     }
   }
+}
+
 
   // Handle ICE candidate messages
  async function handleIce(id: string, candidate: Candidate) {
   try {
+
+    console.log("Received ICE candidate:", candidate);
     if (peer.current?.remoteDescription) {
       await peer.current.addIceCandidate(new RTCIceCandidate(candidate));
       log("Added ICE candidate");
@@ -251,7 +246,6 @@ log("Answer sent.");
 
     socket.on("nearbyUsers" , ( users : Member[] ) => {
       setNearByUsers(users);
-      console.log("SET" , users);
     })  
 
   
