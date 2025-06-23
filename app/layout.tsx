@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    apple: "/icons/apple.png",
   },
   manifest: "/manifest.json",
 };
@@ -107,6 +107,21 @@ export default function RootLayout({
           "https://twitter.com/GochiStuff"
         ],
       },
+      {
+        "@type": "SoftwareApplication",
+        "name": "Air Delivery",
+        "operatingSystem": "All",
+        "applicationCategory": "WebApplication",
+        "browserRequirements": "Requires JavaScript",
+        "url": "https://airdelivery.site/",
+        "description": "Free peer-to-peer file sharing tool using secure direct browser connections. No upload, no sign-up, just send.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+
     ],
   };
 
