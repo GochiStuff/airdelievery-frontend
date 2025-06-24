@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://air-delivery/vercel.app/sitemap.xml
+# Reference to your sitemap(s). Use absolute URL.
+Sitemap: https://airdelivery.site/sitemap.xml
