@@ -1,8 +1,9 @@
 "use client";
 
-import { InfoIcon } from "lucide-react";
+import { ExternalLink, InfoIcon } from "lucide-react";
 import React, { useState } from "react";
 import FeedbackPopup from "./Feedback";
+import { useRouter } from "next/navigation";
 
 const aboutInfo = [
   {
@@ -44,6 +45,7 @@ const aboutInfo = [
 export default function AboutCard() {
   const [open, setOpen] = useState(false);
 
+  const router = useRouter();
   return (
     <div>
       <button
@@ -71,12 +73,22 @@ export default function AboutCard() {
               &times;
             </button>
 
+            
+
             <h2 className="text-2xl md:text-3xl font-bold text-zinc-900 mb-2">
               Air Delivery
             </h2>
             <p className="text-sm text-zinc-500 mb-4">
             A fast, private way to share files .
             </p>
+              <button
+            onClick={() => router.push('/guide/p2p-file-sharing')}
+            aria-label="Close"
+            className="  text-orange-500 flex gap-1 mb-2 hover:text-orange-700"
+          >
+            <ExternalLink className="w-4" />
+           Go to detailed guide
+          </button>
 
             <div className="space-y-5 text-sm md:text-base leading-relaxed">
               {aboutInfo.map(({ title, content }) => (

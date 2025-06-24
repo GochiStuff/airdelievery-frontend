@@ -56,7 +56,7 @@ export default function RoomPage() {
 
   
 
-  const { handleFileSelect,meta , leaveFlight, connectToFlight,  cancelReceive , cancelTransfer , recvQueue , queue , autoDownload ,setAutoDownload , downloadAll, downloadFile , resumeTransfer , pauseTransfer,   status , members , openFile ,refreshNearby , inviteToFlight  , nearByUsers , sendFeedback  , flightId}  = useWebRTCContext();
+  const { handleFileSelect,meta , leaveFlight, connectToFlight , cancelTransfer , recvQueue , queue , autoDownload ,setAutoDownload , downloadFile , resumeTransfer , pauseTransfer,   status , members , openFile ,refreshNearby , inviteToFlight  , nearByUsers , sendFeedback  , flightId}  = useWebRTCContext();
 
   const handleLeave = () => {
     setIsLeft(true);
@@ -654,7 +654,7 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
     </div>
   );
 }
-// MetricsSection with modern card UI
+
 function MetricsSection({ meta }: { meta: any }) {
   return (
     <div className="bg-white rounded-3xl shadow-sm p-5 max-h-72 flex flex-col">
@@ -689,7 +689,6 @@ function MetricsSection({ meta }: { meta: any }) {
   );
 }
 
-// MetricCard styled as scrollable list item
 function MetricCard({
   label,
   value,

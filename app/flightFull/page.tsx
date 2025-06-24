@@ -8,9 +8,7 @@ export default function FlightFullPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white p-10 rounded-3xl shadow-xl border border-orange-100 text-center">
-        {/* Optional Icon/Image */}
-        {/* <img src="/images/flight-full.svg" className="w-24 mx-auto mb-6" alt="Flight Full" /> */}
-
+        
         <h1 className="text-3xl font-extrabold text-orange-600 mb-4 tracking-tight">
           Flight Full
         </h1>

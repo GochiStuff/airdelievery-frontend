@@ -3,6 +3,8 @@
 
 import { useEffect } from "react";
 import Script from "next/script";
+import { ExternalLink, icons } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type InfoModalProps = {
   popupContent: "terms" | "faq";
@@ -115,6 +117,7 @@ export function InfoModal({ popupContent, closePopup }: InfoModalProps) {
     };
   }, []);
 
+  const router = useRouter();
 
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -146,7 +149,9 @@ export function InfoModal({ popupContent, closePopup }: InfoModalProps) {
         aria-labelledby="info-modal-title"
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       >
-        <div className="bg-white text-zinc-900 max-w-lg w-full mx-4 p-6 rounded-lg shadow-xl relative max-h-[80vh] overflow-y-auto">
+        <div className="bg-white text-zinc-900 max-w-2xl w-full mx-4 p-5 rounded-2xl shadow-xl relative max-h-[80vh] overflow-y-auto">
+       
+          
           <button
             onClick={closePopup}
             aria-label="Close"
@@ -154,9 +159,17 @@ export function InfoModal({ popupContent, closePopup }: InfoModalProps) {
           >
             ✕
           </button>
-          <h2 id="info-modal-title" className="text-xl font-semibold mb-4">
+          <h2 id="info-modal-title" className="text-xl font-semibold">
             {popupContent === "terms" ? "Terms & Privacy" : "Frequently Asked Questions"}
           </h2>
+           <button
+            onClick={() => router.push('/guide/p2p-file-sharing')}
+            aria-label="Close"
+            className="  text-orange-500 mt-2 flex gap-1 mb-4 hover:text-orange-200"
+          >
+            <ExternalLink className="w-4" />
+           Go to detailed guide
+          </button>
 
           {popupContent === "terms" ? (
             <section className="space-y-6 text-sm text-zinc-800">

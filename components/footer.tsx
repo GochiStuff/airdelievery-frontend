@@ -2,11 +2,13 @@
 
 import React, { useState } from "react";
 import { InfoModal } from "./infoComponent";
+import { useRouter } from "next/navigation";
 
 export default function FooterStrip() {
   const [popupContent, setPopupContent] = useState<null | "terms" | "faq">(null);
 
   const closePopup = () => setPopupContent(null);
+  const router = useRouter();
 
   return (
     <>
@@ -23,6 +25,12 @@ export default function FooterStrip() {
             className="hover:underline hover:text-orange-400 transition"
           >
             FAQ
+          </button>
+          <button
+            onClick={() => router.push('/guide/p2p-file-sharing')}
+            className="hover:underline hover:text-orange-400 transition"
+          >
+            Guide
           </button>
           <span className="mx-0">|</span>
           <span>
