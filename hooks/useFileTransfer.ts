@@ -459,7 +459,7 @@ export function useFileTransfer(
         if (type === "init") {
           try {
             // update stats  number of files + update size
-            updateStats(1, size / 1024 * 1024 ); // IN MBs
+            // updateStats(1, size / 1024 * 1024 ); // IN MBs
 
             let writer: WritableStreamDefaultWriter;
             let chunks: Uint8Array[] | undefined = undefined;
