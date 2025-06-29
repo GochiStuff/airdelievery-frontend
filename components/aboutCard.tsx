@@ -1,59 +1,47 @@
 "use client";
 
-import { ExternalLink, InfoIcon } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import React, { useState } from "react";
 import FeedbackPopup from "./Feedback";
 import { useRouter } from "next/navigation";
+import { url } from "inspector";
 
-const aboutInfo = [
+const whatsNewInfo = [
+  
   {
-    title: "What is Air Delivery?",
+    title: "🛜 One Click Nearby Connect",
     content:
-      "Air Delivery is a free, streamlined web app for fast, private file sharing. It uses peer-to-peer (P2P) technology to transfer files directly between devices — no uploads, no intermediaries, just speed and privacy.",
+      "Instantly detect and connect to nearby devices over the same Wi-Fi network. Just drag and drop.",
   },
   {
-    title: "How do I use it?",
-    content: (
-      <>
-        <p><strong>Same network:</strong> Open Air Delivery on both devices connected to the same Wi-Fi. They’ll auto-detect each other. Drop files and send.</p>
-        <p className="mt-2"><strong>Different networks:</strong> Use a <b>Flight Code</b>, <b>QR</b>, or <b>link</b> to connect. (Note: Some connections may be slower due to TURN server limitations.)</p>
-      </>
-    ),
+    title: "🌍 Remote Flights",
+    content:
+      "Connect remotely with a secure code, link, or QR — even across different networks.",
   },
   {
-    title: "Security & Privacy",
+    title: "🍕 Coming Soon...",
     content:
-      "Files are end-to-end encrypted using WebRTC. Nothing is stored or routed through any server — transfers happen directly between devices.",
+      "- Save trusted devices, Group share, password up, preview file and more!",
   },
   {
-    title: "Development Status",
+    title: "🧪 Just Launched",
     content:
-      "This is the initial release. Expect some bugs. New features and improvements are in progress — your feedback matters!",
-  },
-  {
-    title: "Is it Open Source?",
-    content:
-      "Not yet. Air Delivery is a handcrafted experience, optimized for privacy and speed.",
-  },
-  {
-    title: "Feedback & Support",
-    content:
-      "Found a bug? Got an idea? Reach out! Every bit of feedback helps shape the future of Air Delivery.",
+      "This is the initial release. Bugs may exist. Your feedback will help us improve and grow.",
   },
 ];
 
-export default function AboutCard() {
+export default function WhatsNewCard() {
   const [open, setOpen] = useState(false);
-
   const router = useRouter();
+
   return (
     <div>
       <button
-        aria-label="About Air Delivery"
+        aria-label="What's New in Air Delivery"
         onClick={() => setOpen(true)}
         className="text-sm font-medium text-zinc-300 hover:text-orange-500 transition-colors"
       >
-        How it works?
+        What’s New?
       </button>
 
       {open && (
@@ -73,36 +61,38 @@ export default function AboutCard() {
               &times;
             </button>
 
-            
-
             <h2 className="text-2xl md:text-3xl font-bold text-zinc-900 mb-2">
-              Air Delivery
+              What's New in Air Delivery 🚀
             </h2>
             <p className="text-sm text-zinc-500 mb-4">
-            A fast, private way to share files .
+              Here's what we've been working on.
             </p>
-              <button
-            onClick={() => router.push('/guide/p2p-file-sharing')}
-            aria-label="Close"
-            className="  text-orange-500 flex gap-1 mb-2 hover:text-orange-700"
-          >
-            <ExternalLink className="w-4" />
-           Go to detailed guide
-          </button>
+
+        
+            <div className="mb-6 rounded-xl overflow-hidden shadow">
+              <iframe
+                className="w-full aspect-video rounded-xl"
+                src="https://www.youtube.com/embed/l_YP2RgcyHY?autoplay=1&mute=1&loop=1&playlist=l_YP2RgcyHY&controls=0"
+                title="YouTube video player"
+                frameBorder="0"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+
+
+
+            
 
             <div className="space-y-5 text-sm md:text-base leading-relaxed">
-              {aboutInfo.map(({ title, content }) => (
+              {whatsNewInfo.map(({ title, content }) => (
                 <div key={title}>
                   <h3 className="font-semibold text-zinc-800 mb-1">{title}</h3>
                   <div className="text-zinc-600">{content}</div>
                 </div>
               ))}
-
-            <FeedbackPopup/>
             </div>
-            
           </div>
-
         </div>
       )}
     </div>

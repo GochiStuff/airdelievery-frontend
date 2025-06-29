@@ -1,4 +1,3 @@
-// "use client" remains for client-side hooks and state
 "use client";
 
 import React, { ChangeEvent, useEffect, useState } from "react";
@@ -8,7 +7,8 @@ import AboutCard from "@/components/aboutCard";
 import { useInvitationToJoin } from "@/hooks/invitationToJoin";
 import { getLocalIp } from "@/hooks/useWebRTCforIP";
 import { useWebRTCContext } from "@/context/WebRTCContext";
-import Script from "next/script";
+import InfoSection from "@/components/InfoSection";
+import TermsModal from "@/components/terms";
 
 
 export default function MainPage() {
@@ -34,7 +34,14 @@ export default function MainPage() {
     }
   }, [flightId]);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
+
+    const accepted = localStorage.getItem("acceptedTerms");
+    if (!accepted) 
+      {
+        setShowTerms(true);
+        return;
+      }
     if (!socket) return;
     if (flightId) {
       router.push(`/flight/${flightId}`);
@@ -54,20 +61,16 @@ export default function MainPage() {
   };
 
   useEffect(() => {
-    // Register local IP once on socket connection
     getLocalIp((ip) => {
       socket?.emit("registerLocalIp", { localIP: ip });
     });
 
-    // Initial fetch
     refreshNearby();
 
-    // Set interval to refresh every 5 seconds
     const interval = setInterval(() => {
       refreshNearby();
     }, 5000);
 
-    // Cleanup on unmount
     return () => clearInterval(interval);
   }, [socket]);
 
@@ -75,44 +78,26 @@ export default function MainPage() {
     leaveFlight();
   };
 
+  const [showTerms, setShowTerms] = useState(false);
+
+
+  const handleAccept = () => {
+    localStorage.setItem("acceptedTerms", "true");
+  };
+
+
+
   const invitationPop = useInvitationToJoin();
   const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   return (
     <>
-      {/* JSON-LD structured data for SoftwareApplication */}
-      <Script id="structured-data" type="application/ld+json">
-        {`
-          {
-            "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            "name": "Airdelivery",
-            "url": "https://airdelivery.site",
-            "description": "Airdelivery is a free, encrypted peer-to-peer file sharing tool: send files directly between devices—no uploads, no cloud, just speed and privacy.",
-            "applicationCategory": "Utility",
-            "operatingSystem": "Web",
-            "author": {
-              "@type": "Organization",
-              "name": "Airdelivery"
-            },
-            "offers": {
-              "@type": "Offer",
-              "price": "0",
-              "priceCurrency": "USD"
-            },
-            "browserRequirements": "Requires modern browser with WebRTC support",
-            "featureList": [
-              "Encrypted peer-to-peer file transfer",
-              "Instant transfer with no file size limits",
-              "No cloud storage or uploads",
-              "Easy join via flight code",
-              "Local network discovery"
-            ]
-          }
-        `}
-      </Script>
+
+
+
 
       {/* Main content */}
+      
       <main className="relative flex mb-10 flex-col md:flex-row items-center max-w-9xl mx-auto justify-around min-h-screen overflow-hidden">
         {invitationPop}
         {flightId && (
@@ -157,6 +142,12 @@ export default function MainPage() {
             </div>
           </div>
         )}
+
+          <TermsModal
+                show={showTerms}
+                onClose={() => setShowTerms(false)}
+                onAccept={handleAccept}
+              />
 
         {/* Tagline background */}
         <section className="relative w-full mt-10 md:w-auto flex md:block flex-col items-center md:items-start text-center md:text-left justify-center">
@@ -313,11 +304,12 @@ export default function MainPage() {
                 </span>
               </div>
 
+            
               {/* File and Folder Section */}
               <div className="flex flex-row space-x-4 w-full mb-2 px-8">
                 <label className="flex flex-col flex-1 items-center text-zinc-700 px-8 py-3 rounded-xl bg-zinc-100 hover:bg-zinc-100 font-semibold shadow-lg transition-all transform hover:-translate-y-1 cursor-pointer ">
                   <span>
-                    {flightId ? "You are in a flight ..." : "Start sending"}
+                    {flightId ? "You're currently in a flight...." : "Tap to start sending"}
                   </span>
                   <button className="hidden" onClick={handleCreate} />
                 </label>
@@ -377,7 +369,7 @@ export default function MainPage() {
               <h2 className="text-2xl font-bold text-white tracking-tight">About</h2>
               <p className="leading-relaxed text-zinc-400">
                 <span className="text-white font-medium">Airdelivery</span> is a
-                free, encrypted peer-to-peer file sharing tool. Files are sent
+                free, encrypted p2p file sharing tool. Files are sent
                 directly between devices — no uploads, no cloud, just speed and
                 privacy.
               </p>
@@ -408,6 +400,8 @@ export default function MainPage() {
           </div>
         </section>
       </main>
+
+      <InfoSection/>
     </>
   );
 }

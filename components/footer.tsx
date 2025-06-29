@@ -1,61 +1,49 @@
 "use client";
 
 import React, { useState } from "react";
-import { InfoModal } from "./infoComponent";
 import { useRouter } from "next/navigation";
+import TermsModal from "./terms";
 
 export default function FooterStrip() {
-  const [popupContent, setPopupContent] = useState<null | "terms" | "faq">(null);
-
-  const closePopup = () => setPopupContent(null);
+  const [showTerms, setShowTerms] = useState(false);
   const router = useRouter();
 
   return (
     <>
-      <footer className="w-full border-t border-zinc-800 bg-zinc-900 text-zinc-400 text-sm px-4 py-4">
-        <div className="max-w-6xl mx-auto text-center flex flex-wrap justify-center items-center gap-3">
-          <button
-            onClick={() => setPopupContent("terms")}
-            className="hover:underline hover:text-orange-400 transition"
+      <footer className="w-full border-t border-zinc-800 bg-zinc-950 text-zinc-500 text-sm px-6 py-5 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto flex flex-wrap justify-center items-center gap-x-6 gap-y-3 text-center">
+          <button aria-labelledby="terms and privacy"
+            onClick={() => setShowTerms(true)}
+            className="transition text-zinc-400 hover:text-white hover:underline"
           >
             Terms & Privacy
           </button>
-          <button
-            onClick={() => setPopupContent("faq")}
-            className="hover:underline hover:text-orange-400 transition"
-          >
-            FAQ
-          </button>
-          <button
-            onClick={() => router.push('/guide/p2p-file-sharing')}
-            className="hover:underline hover:text-orange-400 transition"
+
+          <button aria-labelledby="Guide for p2p file sharing and webRTC"
+            onClick={() => router.push("/guide/p2p-file-sharing")}
+            className="transition text-zinc-400 hover:text-white hover:underline"
           >
             Guide
           </button>
-          <span className="mx-0">|</span>
-          <span>
-            Built with ❤️ by{" "}
+
+          <span className="hidden sm:inline text-zinc-700 select-none">|</span>
+
+          <span  aria-labelledby="author" className="text-xs sm:text-sm text-zinc-500">
+            Built with <span className="text-pink-400">❤️</span> by{" "}
             <a
               href="https://x.com/gochistuff"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:underline hover:text-orange-400 font-medium transition"
+              className="text-white hover:underline font-medium"
             >
               Yash Jangid
             </a>{" "}
-            © {new Date().getFullYear()} AirDelivery
+            · © {new Date().getFullYear()} AirDelivery
           </span>
         </div>
       </footer>
 
-      {/* Popups */}
-      {popupContent && ( popupContent === "terms" ?
-        <InfoModal popupContent="terms" closePopup={closePopup}/>  
-        :
-        <InfoModal popupContent="faq" closePopup={closePopup}/>  
-    )
-        
-      }
+      <TermsModal show={showTerms} onClose={() => setShowTerms(false)} />
     </>
   );
 }

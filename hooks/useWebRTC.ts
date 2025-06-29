@@ -61,12 +61,15 @@ export function useWebRTC(
   
     const pc = new RTCPeerConnection({ iceServers: [{
    urls: [ "stun:bn-turn2.xirsys.com" ]
+
 }, {
    username: TURN_USERNAME,
    credential: TURN_CREDENTIAL,
    urls: [
-       "turn:bn-turn2.xirsys.com:80?transport=udp",
+        "turn:bn-turn2.xirsys.com:80?transport=udp",
        "turn:bn-turn2.xirsys.com:3478?transport=udp",
+       "turn:bn-turn2.xirsys.com:80?transport=tcp",
+       "turn:bn-turn2.xirsys.com:3478?transport=tcp",
    ]
 }]
 
@@ -169,6 +172,13 @@ if (pc) {
     
   }
 
+  const updateStats = (files: number, transferred: number) => {
+    console.log(files , transferred);
+    socket?.emit("updateStats", {
+      filesShared : files,
+      Transferred: transferred,
+    });
+  };
   
 
   // Handle when we get an offer (receiver side).
@@ -352,6 +362,7 @@ const flushBufferedCandidates = async () => {
     status, 
     nearByUsers,
     inviteToFlight,
+    updateStats,
     sendFeedback,
     connectToFlight,
     refreshNearby,

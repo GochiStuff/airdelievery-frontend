@@ -1,13 +1,7 @@
 "use client";
 import { useFileTransfer } from "@/hooks/useFileTransfer";
 import { useWebRTC } from "@/hooks/useWebRTC";
-import {
-  createContext,
-  useContext,
-  useRef,
-  useState,
-  ReactNode,
-} from "react";
+import { createContext, useContext, useRef, useState, ReactNode } from "react";
 
 type Props = {
   children: ReactNode;
@@ -19,7 +13,6 @@ type WebRTCContextType = ReturnType<typeof useWebRTC> &
     leaveFlight: () => void;
     flightId: string;
   };
-
 
 const WebRTCContext = createContext<WebRTCContextType | null>(null);
 
@@ -35,7 +28,7 @@ export const WebRTCProvider = ({ children }: Props) => {
   });
 
   //Create fileTrans and assign to ref
-  const fileTrans = useFileTransfer(webRTC.dataChannel, webRTC.disconnect);
+  const fileTrans = useFileTransfer(webRTC.dataChannel, webRTC.disconnect , webRTC.updateStats);
   fileTransRef.current = fileTrans;
 
   const connectToFlight = (id: string) => {
@@ -43,8 +36,7 @@ export const WebRTCProvider = ({ children }: Props) => {
     webRTC.connectToFlight(id);
   };
 
-  const leaveFlight =  () => {
-    
+  const leaveFlight = () => {
     fileTrans.setMeta({
       totalSent: 0,
       totalReceived: 0,
@@ -52,8 +44,9 @@ export const WebRTCProvider = ({ children }: Props) => {
     });
     fileTrans.setQueue([]);
     fileTrans.setRecvQueue([]);
+
     webRTC.disconnect();
-    setFlightId("");    
+    setFlightId("");
   };
 
   return (

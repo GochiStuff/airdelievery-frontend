@@ -36,6 +36,17 @@ export const metadata: Metadata = {
     "Air Delivery",
     "P2P file sharing",
     "WebRTC file transfer",
+    "p2p file sharing",
+    "peer-to-peer file transfer",
+    "encrypted file sharing",
+    "send large files",
+    "no cloud sharing",
+    "file sharing",
+    "sharing p2p",
+    "send files",
+    "share it",
+    "sharedrop",
+    "airdrop",
     "peer-to-peer file transfer",
     "instant file sharing",
     "large file transfer without cloud",
@@ -122,10 +133,14 @@ export default function RootLayout({
         "url": "https://airdelivery.site/",
         "name": "Air Delivery",
         "description":
-          "Send files instantly with Air Delivery: peer-to-peer transfers via a simple flight code. No login, no ads, secure and efficient.",
+               "p2p file sharing with no size limits, no cloud, end‑to‑end encryption.",
         "publisher": {
           "@id": "https://airdelivery.site/#organization",
         },
+         "logo": {
+          "@type": "ImageObject",
+          "url": "https://airdelivery.site/icons/192.png",
+        }
       },
       {
         "@type": "Organization",
@@ -169,10 +184,16 @@ export default function RootLayout({
       <head>
 
 
+
+        <meta charSet="utf-8" />
+        <meta itemProp="image" content="https://airdelivery.site/icons/512.png"/>
         
         {/* PWA & Performance Hints */}
         <meta name="theme-color" content="#000000" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="author" content="Yash Jangid" />
+        <link rel="canonical" href="https://airdelivery.site" />
+
         <link rel="manifest" href="/manifest.json" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

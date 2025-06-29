@@ -11,13 +11,13 @@
   "theme_color": "#FF6600",
   "icons": [
     {
-      "src": "/icons/192x192.png",
+      "src": "/icons/192.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/512x512.png",
+      "src": "/icons/512.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
@@ -31,7 +31,7 @@
       "url": "/?action=start",
       "icons": [
         {
-          "src": "/icons/send-shortcut.png",
+          "src": "/icons/192.png",
           "type": "image/png",
           "sizes": "192x192",
           "purpose": "any maskable"
@@ -45,7 +45,7 @@
       "url": "/guide/p2p-file-sharing",
       "icons": [
         {
-          "src": "/icons/faq-shortcut.png",
+          "src": "/icons/192.png",
           "type": "image/png",
           "sizes": "192x192",
           "purpose": "any maskable"
