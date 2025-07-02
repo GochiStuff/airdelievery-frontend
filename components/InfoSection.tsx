@@ -26,7 +26,10 @@ const faqs = [
   {
     q: "Do I need to install anything?",
     a: "No installation. Just open the site in any modern browser, desktop or mobile. but for quick access you can install the PWA via your browser."
-  },
+  },{
+  q: "Is it available on Play Store or App Store?",
+  a: "Not yet. You can install the PWA from your browser for quick access. Native apps are coming soon - stay tuned!"
+  },  
   {
     q: "Can I send from phone to laptop or across networks?",
     a: "Yes. As long as both devices are online and have the site open, transfers will work."

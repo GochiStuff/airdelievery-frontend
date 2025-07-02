@@ -5,7 +5,6 @@ import { useSocket } from "@/hooks/socketContext";
 import { useRouter } from "next/navigation";
 import AboutCard from "@/components/aboutCard";
 import { useInvitationToJoin } from "@/hooks/invitationToJoin";
-import { getLocalIp } from "@/hooks/useWebRTCforIP";
 import { useWebRTCContext } from "@/context/WebRTCContext";
 import InfoSection from "@/components/InfoSection";
 import TermsModal from "@/components/terms";
@@ -61,10 +60,6 @@ export default function MainPage() {
   };
 
   useEffect(() => {
-    getLocalIp((ip) => {
-      socket?.emit("registerLocalIp", { localIP: ip });
-    });
-
     refreshNearby();
 
     const interval = setInterval(() => {

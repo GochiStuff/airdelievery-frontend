@@ -1,5 +1,5 @@
-"use client"
-import React, { ReactNode, useEffect, useState } from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   File,
@@ -17,10 +17,10 @@ import {
   ArrowUp,
   ArrowDown,
   Gauge,
-
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/badge";
 import { useWebRTCContext } from "@/context/WebRTCContext";
 
 export default function RoomPage() {
@@ -35,59 +35,77 @@ export default function RoomPage() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
 
-    const handleFeedbackSent = () => {
-      setEmail("");
-      setType("feedback");
-      setSubject("");
-      setMessage("");
-      setShowFeedback(false);
-      setFeedbackSent(true);
+  const handleFeedbackSent = () => {
+    setEmail("");
+    setType("feedback");
+    setSubject("");
+    setMessage("");
+    setShowFeedback(false);
+    setFeedbackSent(true);
 
-      setTimeout(() => {
-        setFeedbackSent(false);
-      }, 5000);
-    };
+    setTimeout(() => {
+      setFeedbackSent(false);
+    }, 5000);
+  };
 
-    const router = useRouter()
-
+  const router = useRouter();
 
   const [isSpinning, setIsSpinning] = useState(false);
   const [isLeft, setIsLeft] = useState(false);
 
-  
-
-  const { handleFileSelect,meta , leaveFlight, connectToFlight , cancelTransfer , recvQueue , queue , autoDownload ,setAutoDownload , downloadFile , resumeTransfer , pauseTransfer,   status , members , openFile ,refreshNearby , inviteToFlight  , nearByUsers , sendFeedback  , flightId}  = useWebRTCContext();
+  const {
+    handleFileSelect,
+    meta,
+    leaveFlight,
+    connectToFlight,
+    cancelTransfer,
+    recvQueue,
+    queue,
+    autoDownload,
+    setAutoDownload,
+    downloadFile,
+    resumeTransfer,
+    pauseTransfer,
+    status,
+    members,
+    openFile,
+    refreshNearby,
+    inviteToFlight,
+    nearByUsers,
+    sendFeedback,
+    flightId,
+  } = useWebRTCContext();
 
   const handleLeave = () => {
     setIsLeft(true);
     leaveFlight();
-    router.push('/');
-  }
-useEffect(() => {
-  if (!flight) return;
-
-  if (flightId === flight) return;
-  
-  if( isLeft) return;
-
-  const handleSwitch =  () => {
-    if (flightId && flightId !== flight) {
-      const leave = confirm(
-        `You are already in flight "${flightId}". Leave it and join "${flight}"?`
-      );
-      if (leave) {
-        leaveFlight();  
-        connectToFlight(flight);
-      } else {
-        router.push(`/flight/${flightId}`);
-      }
-    } else {
-      connectToFlight(flight);
-    }
+    router.push("/");
   };
+  useEffect(() => {
+    if (!flight) return;
 
-  handleSwitch();
-}, [flight, flightId, connectToFlight, leaveFlight, router]);
+    if (flightId === flight) return;
+
+    if (isLeft) return;
+
+    const handleSwitch = () => {
+      if (flightId && flightId !== flight) {
+        const leave = confirm(
+          `You are already in flight "${flightId}". Leave it and join "${flight}"?`
+        );
+        if (leave) {
+          leaveFlight();
+          connectToFlight(flight);
+        } else {
+          router.push(`/flight/${flightId}`);
+        }
+      } else {
+        connectToFlight(flight);
+      }
+    };
+
+    handleSwitch();
+  }, [flight, flightId, connectToFlight, leaveFlight, router]);
 
   const handleRefresh = () => {
     setIsSpinning(true);
@@ -99,61 +117,71 @@ useEffect(() => {
     <main className="min-h-screen bg-gray-200 text-zinc-900 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
-     <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white rounded-2xl shadow-xl p-6 sm:p-8 gap-6 mb-6 transition-all">
-  {/* Left: Flight Info */}
-  <div className="flex flex-col gap-3 w-full md:w-auto">
-    <div className="flex flex-wrap items-center gap-3">
-      <h1 className="text-2xl sm:text-4xl font-extrabold tracking-wide flex items-center gap-2">
-        FLIGHT
-        <span className="bg-zinc-100  text-1xl  sm:text-3xl font-mono text-zinc-700 px-2 py-1 rounded-lg border border-zinc-200 ">
-          {flight}
-        </span>
-      </h1>
-    </div>
-    <div className="flex flex-wrap items-center gap-3 mt-1 text-sm">
-      <Badge color={typeof status === "string" && status.includes("Connection") ? "green" : "yellow"}>
-        {status}
-      </Badge>
-      <Badge color="gray">
-        {members.length} Member{members.length !== 1 ? "s" : ""}
-      </Badge>
-    </div>
-  </div>
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white rounded-2xl shadow-xl p-6 sm:p-8 gap-6 mb-6 transition-all">
+          {/* Left: Flight Info */}
+          <div className="flex flex-col gap-3 w-full md:w-auto">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl sm:text-4xl font-extrabold tracking-wide flex items-center gap-2">
+                FLIGHT
+                <span className="bg-zinc-100  text-1xl  sm:text-3xl font-mono text-zinc-700 px-2 py-1 rounded-lg border border-zinc-200 ">
+                  {flight}
+                </span>
+              </h1>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 mt-1 text-sm">
+              <Badge
+                color={
+                  typeof status === "string" && status.includes("Connection")
+                    ? "green"
+                    : status.includes("Failed")
+                    ? "red"
+                    : "yellow"
+                }
+              >
+                {status}
+              </Badge>
+              <Badge color="gray">
+                {members.length} Member{members.length !== 1 ? "s" : ""}
+              </Badge>
+            </div>
+          </div>
 
-  {/* Right: Buttons */}
-  <div className="flex flex-wrap md:flex-nowrap items-start sm:items-center justify-start md:justify-end gap-3 md:gap-6 w-full md:w-auto">
-    {/* Share Button */}
-    <div className="flex flex-col items-start sm:items-center">
-      <button
-        onClick={() => setShowQR(prev => !prev)}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-md transition duration-200"
-      >
-        <Share2 className="w-5 h-5" />
-        <span className="text-sm">Invite</span>
-      </button>
-      <span className="text-xs hidden md:inline text-zinc-500 mt-1 sm:text-center">Show QR / Code</span>
-    </div>
+          {/* Right: Buttons */}
+          <div className="flex flex-wrap md:flex-nowrap items-start sm:items-center justify-start md:justify-end gap-3 md:gap-6 w-full md:w-auto">
+            {/* Share Button */}
+            <div className="flex flex-col items-start sm:items-center">
+              <button
+                onClick={() => setShowQR((prev) => !prev)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-md transition duration-200"
+              >
+                <Share2 className="w-5 h-5" />
+                <span className="text-sm">Invite</span>
+              </button>
+              <span className="text-xs hidden md:inline text-zinc-500 mt-1 sm:text-center">
+                Show QR / Code
+              </span>
+            </div>
 
-    {/* Leave Button */}
-    <div className="flex flex-col items-start sm:items-center">
-      <button
-        onClick={handleLeave}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold shadow-md transition duration-200"
-      >
-        <LogOut className="w-5 h-5" />
-        <span className="hidden text-sm md:inline">Leave</span>
-      </button>
-      <span className="text-xs hidden md:inline text-zinc-500 mt-1 sm:text-center">Leave the flight</span>
-    </div>
-  </div>
-</header>
-
+            {/* Leave Button */}
+            <div className="flex flex-col items-start sm:items-center">
+              <button
+                onClick={handleLeave}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold shadow-md transition duration-200"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="hidden text-sm md:inline">Leave</span>
+              </button>
+              <span className="text-xs hidden md:inline text-zinc-500 mt-1 sm:text-center">
+                Leave the flight
+              </span>
+            </div>
+          </div>
+        </header>
 
         {/* Share QR Popup */}
         {showQR && (
           <div className="fixed animate-fadeIn inset-0 bg-zinc-900/60 h-screen flex items-center justify-center z-50">
             <div className="relative bg-white rounded-3xl shadow-2xl p-8 w-full max-w-xs flex flex-col items-center border-2 border-orange-400">
-     
               <button
                 onClick={() => setShowQR(false)}
                 className="absolute top-3 right-3 text-zinc-400 hover:text-orange-600 text-2xl font-bold"
@@ -166,22 +194,31 @@ useEffect(() => {
                   {flight}
                 </span>
               </div>
-      
-              <h2 className="text-xl font-bold text-zinc-900 mb-3 text-center">Share this Flight</h2>
-     
+
+              <h2 className="text-xl font-bold text-zinc-900 mb-3 text-center">
+                Share this Flight
+              </h2>
+
               <div className="flex justify-center mb-4">
-                <QRCodeSVG value={typeof window !== "undefined" ? window.location.href : ""} size={180} />
+                <QRCodeSVG
+                  value={
+                    typeof window !== "undefined" ? window.location.href : ""
+                  }
+                  size={180}
+                />
               </div>
 
               <div className="w-full flex flex-col items-center mb-2">
                 <div className="flex items-center gap-2 w-full">
                   <input
                     className="flex-1 bg-zinc-100 rounded-lg px-2 py-1 text-sm font-mono border border-zinc-200 text-zinc-700"
-                    value={typeof window !== "undefined" ? window.location.href : ""}
+                    value={
+                      typeof window !== "undefined" ? window.location.href : ""
+                    }
                     readOnly
-                    onFocus={e => e.target.select()}
+                    onFocus={(e) => e.target.select()}
                   />
-                  
+
                   <button
                     onClick={async () => {
                       if (typeof window !== "undefined" && navigator.share) {
@@ -198,108 +235,108 @@ useEffect(() => {
                     <Share2 className="w-5 h-5" />
                   </button>
                 </div>
-                <span className="text-xs text-zinc-500 mt-1">Ask the reciver to join.</span>
+                <span className="text-xs text-zinc-500 mt-1">
+                  Ask the reciver to join.
+                </span>
               </div>
               {/* Scan to join */}
-              <p className="mt-2 text-sm text-zinc-600 text-center">Scan QR or share the link to join this flight.</p>
+              <p className="mt-2 text-sm text-zinc-600 text-center">
+                Scan QR or share the link to join this flight.
+              </p>
             </div>
           </div>
         )}
 
-
         {/* feedback */}
         {showFeedback && (
-  <div className="fixed inset-0 bg-zinc-900/60 h-screen flex items-center justify-center z-50">
-    <div className="relative bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm border-2 border-orange-400">
-      {/* Close button */}
-      <button
-        onClick={() => setShowFeedback(false)}
-        className="absolute top-3 right-3 text-zinc-400 hover:text-orange-600 text-2xl font-bold"
-        aria-label="Close"
-      >
-        ×
-      </button>
+          <div className="fixed inset-0 bg-zinc-900/60 h-screen flex items-center justify-center z-50">
+            <div className="relative bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm border-2 border-orange-400">
+              {/* Close button */}
+              <button
+                onClick={() => setShowFeedback(false)}
+                className="absolute top-3 right-3 text-zinc-400 hover:text-orange-600 text-2xl font-bold"
+                aria-label="Close"
+              >
+                ×
+              </button>
 
-      {/* Title */}
-      <h2 className="text-xl font-bold text-zinc-900 mb-4 text-center">
-        Send Feedback
-      </h2>
+              {/* Title */}
+              <h2 className="text-xl font-bold text-zinc-900 mb-4 text-center">
+                Send Feedback
+              </h2>
 
-      {/* Feedback Form */}
-      <form
-            className="flex flex-col gap-3"
-            onSubmit={async (e) => {
-              e.preventDefault();
+              {/* Feedback Form */}
+              <form
+                className="flex flex-col gap-3"
+                onSubmit={async (e) => {
+                  e.preventDefault();
 
-              const formData = {
-                email,
-                type,
-                subject,
-                message,
-              };
-              sendFeedback(formData);
-              handleFeedbackSent();
-            }}
-          >
-            {/* Email (optional) */}
-            <input
-              type="email"
-              placeholder="Your email (optional)"
-              className="bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-800"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+                  const formData = {
+                    email,
+                    type,
+                    subject,
+                    message,
+                  };
+                  sendFeedback(formData);
+                  handleFeedbackSent();
+                }}
+              >
+                {/* Email (optional) */}
+                <input
+                  type="email"
+                  placeholder="Your email (optional)"
+                  className="bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-800"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
 
-            {/* Type selector */}
-            <select
-              className="bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-800"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-            >
-              <option value="feedback">Feedback</option>
-              <option value="report">Bug Report</option>
-            </select>
+                {/* Type selector */}
+                <select
+                  className="bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-800"
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                >
+                  <option value="feedback">Feedback</option>
+                  <option value="report">Bug Report</option>
+                </select>
 
-            {/* Subject */}
-            <input
-              type="text"
-              required
-              placeholder="Subject"
-              className="bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-800"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-            />
+                {/* Subject */}
+                <input
+                  type="text"
+                  required
+                  placeholder="Subject"
+                  className="bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-800"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                />
 
-            {/* Message */}
-            <textarea
-              required
-              rows={4}
-              placeholder="Your message"
-              className="bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-800 resize-none"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
+                {/* Message */}
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Your message"
+                  className="bg-zinc-100 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-800 resize-none"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                />
 
-            {/* Submit */}
-            <button
-              type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition"
-            >
-              Send
-            </button>
-          </form>
-        </div>
-      </div>
-    )}
+                {/* Submit */}
+                <button
+                  type="submit"
+                  className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition"
+                >
+                  Send
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
 
-    {feedbackSent && (
-        <div className="fixed bottom-5 right-5 animte-fadeIn border-green-600 bg-green-400 text-white px-4 py-2 rounded-xl shadow-lg z-50 text-sm animate-fade-in">
-         Thank you for your feedback!
-        </div>
-      )}
-
-
-
+        {feedbackSent && (
+          <div className="fixed bottom-5 right-5 animte-fadeIn border-green-600 bg-green-400 text-white px-4 py-2 rounded-xl shadow-lg z-50 text-sm animate-fade-in">
+            Thank you for your feedback!
+          </div>
+        )}
 
         {/* Main Content: Upload + Users + Queue */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -307,11 +344,11 @@ useEffect(() => {
           <div className="col-span-1  lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm flex flex-col items-center justify-center">
             <div
               className="w-full h-52  flex flex-col items-center justify-center border-2 border-dashed border-orange-400 rounded-2xl bg-white hover:bg-orange-50 transition cursor-pointer p-6 text-center"
-              onDragOver={e => {
+              onDragOver={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
               }}
-              onDrop={e => {
+              onDrop={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 const files = Array.from(e.dataTransfer.files);
@@ -319,13 +356,22 @@ useEffect(() => {
               }}
             >
               <Folder className="w-12 h-12 text-orange-500 mb-3" />
-              <p className="text-lg font-semibold text-zinc-800">Drag & Drop files or folders</p>
-              <span className="mt-1 text-sm text-zinc-500">or select manually</span>
+              <p className="text-lg font-semibold text-zinc-800">
+                Drag & Drop files or folders
+              </p>
+              <span className="mt-1 text-sm text-zinc-500">
+                or select manually
+              </span>
               <div className="mt-4 flex flex-wrap justify-center gap-3">
                 <label className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-5 py-2 cursor-pointer flex items-center gap-2 text-sm font-medium transition">
                   <File className="w-4 h-4" />
                   <span>Select Files</span>
-                  <input type="file" multiple hidden onChange={handleFileSelect} />
+                  <input
+                    type="file"
+                    multiple
+                    hidden
+                    onChange={handleFileSelect}
+                  />
                 </label>
                 <label className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-5 py-2 cursor-pointer flex items-center gap-2 text-sm font-medium transition">
                   <Folder className="w-4 h-4" />
@@ -341,7 +387,6 @@ useEffect(() => {
                 </label>
               </div>
             </div>
-           
           </div>
 
           {/* Users Panel */}
@@ -352,26 +397,46 @@ useEffect(() => {
                 <h2 className="text-lg font-semibold text-zinc-800">
                   {members.length <= 1 ? "Nearby Users" : "In Flight"}
                 </h2>
-              </div>{ members.length <= 1 && 
-              <button onClick={handleRefresh} className="p-2 rounded-full hover:bg-zinc-100 transition" title="Refresh">
-                <RefreshCwIcon className={`w-5 h-5 ${isSpinning ? "animate-spin" : "transition-transform"}`} />
-              </button>}
+              </div>
+              {members.length <= 1 && (
+                <button
+                  onClick={handleRefresh}
+                  className="p-2 rounded-full hover:bg-zinc-100 transition"
+                  title="Refresh"
+                >
+                  <RefreshCwIcon
+                    className={`w-5 h-5 ${
+                      isSpinning ? "animate-spin" : "transition-transform"
+                    }`}
+                  />
+                </button>
+              )}
             </div>
             <div className="flex flex-col gap-3  overflow-y-auto">
               {(members.length <= 1 ? nearByUsers : members).length === 0 ? (
-                <div className="text-zinc-400 text-sm text-center py-6">{members.length <= 1 ? "No nearby users" : "No members"}</div>
+                <div className="text-zinc-400 text-sm text-center py-6">
+                  {members.length <= 1 ? "No nearby users" : "No members"}
+                </div>
               ) : (
                 (members.length <= 1 ? nearByUsers : members).map((m, idx) => (
                   <button
                     key={idx}
-                    onClick={() => members.length <= 1 && inviteToFlight(m, flight)}
+                    onClick={() =>
+                      members.length <= 1 && inviteToFlight(m, flight)
+                    }
                     className="w-full flex items-center gap-3 rounded-xl px-3 py-2 border border-zinc-200 hover:border-orange-400 hover:bg-orange-50 transition bg-white text-left"
-                    title={members.length <= 1 ? `Connect to ${m.name}` : m.name}
+                    title={
+                      members.length <= 1 ? `Connect to ${m.name}` : m.name
+                    }
                   >
                     <User className="w-6 h-6 text-orange-500 bg-orange-100 rounded-full p-1" />
                     <div className="flex flex-col items-start">
-                      <span className="text-sm font-medium text-zinc-900 truncate">{m.name}</span>
-                      <span className="text-xs text-zinc-500 font-mono truncate">ID: {m.id}</span>
+                      <span className="text-sm font-medium text-zinc-900 truncate">
+                        {m.name}
+                      </span>
+                      <span className="text-xs text-zinc-500 font-mono truncate">
+                        ID: {m.id}
+                      </span>
                     </div>
                   </button>
                 ))
@@ -380,15 +445,31 @@ useEffect(() => {
           </div>
         </section>
 
-         {/* Queue Preview under Upload */}
-            <div className="mt-6 w-full space-y-6">
-              <QueueTray title="Sending Queue" items={queue} pauseTransfer={pauseTransfer} resumeTransfer={resumeTransfer} cancelTransfer={cancelTransfer} reciver={false} />
-              <QueueTray title="Receiver Queue"  setAutoDownload={setAutoDownload} autoDownload={autoDownload} openfile={openFile} fileDownload={downloadFile} items={recvQueue} cancelTransfer={cancelTransfer} reciver={true} />
-            </div>
+        {/* Queue Preview under Upload */}
+        <div className="mt-6 w-full space-y-6">
+          <QueueTray
+            title="Sending Queue"
+            items={queue}
+            pauseTransfer={pauseTransfer}
+            resumeTransfer={resumeTransfer}
+            cancelTransfer={cancelTransfer}
+            reciver={false}
+          />
+          <QueueTray
+            title="Receiver Queue"
+            setAutoDownload={setAutoDownload}
+            autoDownload={autoDownload}
+            openfile={openFile}
+            fileDownload={downloadFile}
+            items={recvQueue}
+            cancelTransfer={cancelTransfer}
+            reciver={true}
+          />
+        </div>
 
         {/* Metrics and Info */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <MetricsSection meta={meta} />
+          <MetricsSection meta={meta} />
           <div className="relative bg-white rounded-3xl shadow-md p-6 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-3 mb-4">
@@ -396,17 +477,22 @@ useEffect(() => {
                 <h3 className="text-2xl font-bold">Love AirDelivery?</h3>
               </div>
               <p className="text-zinc-700 mb-4">
-                If you enjoy using this app, <span className="font-semibold text-orange-500">share it</span> or install
+                If you enjoy using this app,{" "}
+                <span className="font-semibold text-orange-500">share it</span>{" "}
+                or install
               </p>
               <ul className="list-disc list-inside text-zinc-500 text-sm space-y-1 mb-4">
                 <li>
-                  <strong>Tip:</strong> Connect both devices on the same network for optimal speed.
+                  <strong>Tip:</strong> Connect both devices on the same network
+                  for optimal speed.
                 </li>
                 <li>
-                  <strong>Note:</strong> Avoid refreshing after connection is established.
+                  <strong>Note:</strong> Avoid refreshing after connection is
+                  established.
                 </li>
                 <li>
-                  <strong className="text-red-400">IMP:</strong> Use Opera (suggested) or different browser if site not working.
+                  <strong className="text-red-400">IMP:</strong> Use Opera
+                  (suggested) or different browser if site not working.
                 </li>
               </ul>
             </div>
@@ -434,18 +520,21 @@ useEffect(() => {
               <button
                 className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 rounded-2xl font-medium shadow transition"
                 onClick={() => {
-                  if (typeof window !== "undefined" && window.matchMedia("(display-mode: standalone)").matches) {
+                  if (
+                    typeof window !== "undefined" &&
+                    window.matchMedia("(display-mode: standalone)").matches
+                  ) {
                     alert("Already installed!");
                   } else {
-                    alert("Tip: Install this app from browser menu for quick access.");
+                    alert(
+                      "Tip: Install this app from browser menu for quick access."
+                    );
                   }
                 }}
               >
                 Install
               </button>
-             
             </div>
-            
           </div>
         </section>
       </div>
@@ -453,31 +542,36 @@ useEffect(() => {
   );
 }
 
-function Badge({ children, color }: { children: React.ReactNode; color: "green" | "yellow" | "gray" }) {
-  const base = "inline-flex items-center rounded-full font-semibold text-xs px-3 py-1 border";
-  const colors: Record<string, string> = {
-    green: "bg-green-100 text-green-800 border-green-200",
-    yellow: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    gray: "bg-zinc-100 text-zinc-800 border-zinc-200",
-  };
-  return <span className={`${base} ${colors[color]} transition`}>{children}</span>;
-}
-
 interface QueueTrayProp {
   title: string;
   items: any[];
   reciver?: boolean;
   pauseTransfer?: (id: string) => void;
-  fileDownload?: (file: { transferId: string ; blobUrl: string; directoryPath: string }  ) => void;
-  openfile ?: (url : string ) => void;
+  fileDownload?: (file: {
+    transferId: string;
+    blobUrl: string;
+    directoryPath: string;
+  }) => void;
+  openfile?: (url: string) => void;
   allfileDownload?: () => void;
-  autoDownload ?: boolean;
-  setAutoDownload?: ( b : boolean) => void ;
+  autoDownload?: boolean;
+  setAutoDownload?: (b: boolean) => void;
   resumeTransfer?: (id: string) => void;
   cancelTransfer?: (id: string) => void;
 }
 
-function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload , autoDownload , setAutoDownload, openfile , resumeTransfer, cancelTransfer }: QueueTrayProp) {
+function QueueTray({
+  title,
+  items,
+  reciver = false,
+  pauseTransfer,
+  fileDownload,
+  autoDownload,
+  setAutoDownload,
+  openfile,
+  resumeTransfer,
+  cancelTransfer,
+}: QueueTrayProp) {
   const statusLabels: Record<string, string> = {
     queued: "Queued",
     sending: "Sending",
@@ -489,17 +583,21 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
 
   const [show, setShow] = useState(false);
 
-
   return (
     <div className="bg-[#f8f9fa] relative rounded-2xl shadow-sm p-4">
       <h3 className="text-lg font-semibold mb-4">{title}</h3>
-    { reciver && 
-    <div className="absolute top-3 align-text-top right-5 flex gap-2">
-  {/*  DOWNLOAD ALL TODO  */}
-    <button className=" text-xs font-bold text-zinc-500 text-mono " onClick={() => setShow(true)}>Auto Download / not working ?</button>
-    </div>
-    }
-       {show && (
+      {reciver && (
+        <div className="absolute top-3 align-text-top right-5 flex gap-2">
+          {/*  DOWNLOAD ALL TODO  */}
+          <button
+            className=" text-xs font-bold text-zinc-500 text-mono "
+            onClick={() => setShow(true)}
+          >
+            Auto Download / not working ?
+          </button>
+        </div>
+      )}
+      {show && (
         <div className="absolute top-8 animate-fadeIn right-2 z-50 max-w-102 rounded-xl border bg-white p-4 shadow-xl dark:bg-zinc-900 dark:text-white">
           <div className="flex absolute top-3 right-3 items-center justify-between mb-3">
             <button onClick={() => setShow(false)}>
@@ -508,7 +606,7 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
           </div>
 
           <div className="flex items-center gap-2 mb-4">
-             <Switch
+            <Switch
               checked={autoDownload}
               onCheckedChange={setAutoDownload}
               id="auto-download-toggle"
@@ -520,17 +618,20 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
 
           {!autoDownload && (
             <p className="text-sm mb-2 text-orange-500">
-              Auto-download is off. Please use the Download buttons shown next to files.
+              Auto-download is off. Please use the Download buttons shown next
+              to files.
             </p>
           )}
 
           <p className="text-sm leading-snug">
-            Some browsers block multiple automatic downloads for security reasons.
-            If that happens:
+            Some browsers block multiple automatic downloads for security
+            reasons. If that happens:
           </p>
           <ul className="list-disc list-inside text-sm pl-2 mt-2">
             <li>Use the manual download buttons below each file.</li>
-            <li className="text-orange-600">Use Opera (suggested) or different browser if site not working.</li>
+            <li className="text-orange-600">
+              Use Opera (suggested) or different browser if site not working.
+            </li>
             <li>For small multiple files, upload them as a ZIP archive.</li>
             <li>Try new session.</li>
             <li>Large files (~500MB+) are streamed directly to disk.</li>
@@ -544,7 +645,7 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
             <span className="text-sm">No items yet</span>
           </div>
         ) : (
-          items.map(item => (
+          items.map((item) => (
             <div
               key={item.transferId}
               className="w-56 flex-shrink-0 rounded-2xl border border-zinc-200 bg-white shadow hover:shadow-md transition p-4 flex flex-col"
@@ -553,9 +654,7 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
                 <div className="w-10 h-10 bg-zinc-100 rounded-full flex items-center justify-center">
                   <File className="w-5 h-5 text-zinc-600" />
                 </div>
-                <span
-                  className="text-sm font-medium text-zinc-900 text-center truncate w-full"
-                >
+                <span className="text-sm font-medium text-zinc-900 text-center truncate w-full">
                   {item.file?.name || item.name || item.directoryPath}
                 </span>
                 <div className="w-full bg-zinc-200 rounded-full h-2 mt-2">
@@ -572,55 +671,65 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
               <div className="mt-4 flex justify-center gap-3">
                 {reciver ? (
                   <>
-                  {item.status !== "done" && item.status !== "canceled" && (
-                    <button
-                      className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 transition"
-                      onClick={() => cancelTransfer && cancelTransfer(item.transferId)}
-                      title="Cancel"
+                    {item.status !== "done" && item.status !== "canceled" && (
+                      <button
+                        className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 transition"
+                        onClick={() =>
+                          cancelTransfer && cancelTransfer(item.transferId)
+                        }
+                        title="Cancel"
                       >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
 
-                  { item.status === "done" && item.status !== "canceled"  && item.downloaded ? 
-                  
-                  <p className="text-xs font-bold text-zinc-500 text-mono">
-                     Already downloaded or is in disk.
-                  </p>
-                  
-                  
-                  : <>
-                  {item.status === "done" && item.status !== "canceled" && !autoDownload && item.blobUrl  &&  (
-                    <button
-                      className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-500 border border-blue-200 transition"
-                      //@ts-ignore
-                      onClick={() => fileDownload(item) }
-                      title="Download"
-                      >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  )}
-                  {item.status === "done" && item.status !== "canceled" && !autoDownload && item.blobUrl  &&  (
-                  
-                  <></>
-                  // TODO
-                  // <button
-                    // className="p-2 rounded-full bg-yellow-50 hover:bg-yellow-100 text-yellow-500 border border-yellow-200 transition"
-                    // //@ts-ignore
-                    // onClick={() => openfile(item.blobUrl) }
-                    // title="open"
-                    // >
-                    //   <Play className="w-4 h-4" />
-                    // </button>
-                  )}
-                  </>}
+                    {item.status === "done" &&
+                    item.status !== "canceled" &&
+                    item.downloaded ? (
+                      <p className="text-xs font-bold text-zinc-500 text-mono">
+                        Already downloaded or is in disk.
+                      </p>
+                    ) : (
+                      <>
+                        {item.status === "done" &&
+                          item.status !== "canceled" &&
+                          !autoDownload &&
+                          item.blobUrl && (
+                            <button
+                              className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-500 border border-blue-200 transition"
+                              //@ts-ignore
+                              onClick={() => fileDownload(item)}
+                              title="Download"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                          )}
+                        {item.status === "done" &&
+                          item.status !== "canceled" &&
+                          !autoDownload &&
+                          item.blobUrl && (
+                            <></>
+                            // TODO
+                            // <button
+                            // className="p-2 rounded-full bg-yellow-50 hover:bg-yellow-100 text-yellow-500 border border-yellow-200 transition"
+                            // //@ts-ignore
+                            // onClick={() => openfile(item.blobUrl) }
+                            // title="open"
+                            // >
+                            //   <Play className="w-4 h-4" />
+                            // </button>
+                          )}
                       </>
+                    )}
+                  </>
                 ) : (
                   <>
                     {item.status === "paused" && (
                       <button
                         className="p-2 rounded-full bg-green-50 hover:bg-green-100 text-green-600 border border-green-200 transition"
-                        onClick={() => resumeTransfer && resumeTransfer(item.transferId)}
+                        onClick={() =>
+                          resumeTransfer && resumeTransfer(item.transferId)
+                        }
                         title="Resume"
                       >
                         <Play className="w-4 h-4" />
@@ -629,7 +738,9 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
                     {item.status === "sending" && (
                       <button
                         className="p-2 rounded-full bg-yellow-50 hover:bg-yellow-100 text-yellow-600 border border-yellow-200 transition"
-                        onClick={() => pauseTransfer && pauseTransfer(item.transferId)}
+                        onClick={() =>
+                          pauseTransfer && pauseTransfer(item.transferId)
+                        }
                         title="Pause"
                       >
                         <Pause className="w-4 h-4" />
@@ -638,7 +749,9 @@ function QueueTray({ title, items, reciver = false, pauseTransfer,fileDownload ,
                     {item.status !== "done" && item.status !== "canceled" && (
                       <button
                         className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 transition"
-                        onClick={() => cancelTransfer && cancelTransfer(item.transferId)}
+                        onClick={() =>
+                          cancelTransfer && cancelTransfer(item.transferId)
+                        }
                         title="Cancel"
                       >
                         <X className="w-4 h-4" />
@@ -700,12 +813,14 @@ function MetricCard({
 }) {
   return (
     <div className="w-full flex items-center gap-3 rounded-xl px-3 py-2 border border-zinc-200 hover:border-orange-400 hover:bg-orange-50 transition bg-white text-left">
-      <div className="bg-orange-100 p-1 rounded-full">
-        {icon}
-      </div>
+      <div className="bg-orange-100 p-1 rounded-full">{icon}</div>
       <div className="flex flex-col items-start">
-        <span className="text-sm font-medium text-zinc-900 truncate">{label}</span>
-        <span className="text-xs text-zinc-500 font-mono truncate">{value}</span>
+        <span className="text-sm font-medium text-zinc-900 truncate">
+          {label}
+        </span>
+        <span className="text-xs text-zinc-500 font-mono truncate">
+          {value}
+        </span>
       </div>
     </div>
   );

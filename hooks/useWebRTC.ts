@@ -6,7 +6,7 @@ type Candidate = RTCIceCandidateInit;
 function userMessage(msg: string) {
   if (msg.includes("DataChannel opened")) return "Connection established";
   if (msg.includes("Connected")) return "Connection established";
-  if (msg.includes("Offer sent")) return "Offer sent";
+  if (msg.includes("Offer sent")) return "Ready to connect";
   if (msg.includes("Answer sent")) return "Offer accepted...";
   if (msg.includes("Remote description set")) return "finalizing...";
   if (msg.includes("Added ICE candidate")) return "Connection improved";
@@ -59,22 +59,36 @@ export function useWebRTC(
 
   
   
-    const pc = new RTCPeerConnection({ iceServers: [{
-   urls: [ "stun:bn-turn2.xirsys.com" ]
+     const pc = new RTCPeerConnection({
+      iceServers: [
+        {
+          urls: [ "stun:stun.l.google.com:19302" ] // Reliable and fast
+        },
+        {
+          urls: [
+            "turn:bn-turn2.xirsys.com:80?transport=udp",
+            "turn:bn-turn2.xirsys.com:3478?transport=udp",
+            "turn:bn-turn2.xirsys.com:80?transport=tcp",
+            "turn:bn-turn2.xirsys.com:3478?transport=tcp"
+          ],
+          username: TURN_USERNAME,
+          credential: TURN_CREDENTIAL
+        }
+      ],
+      iceTransportPolicy: "all", // allows STUN first, fallback to TURN
+    });
 
-}, {
-   username: TURN_USERNAME,
-   credential: TURN_CREDENTIAL,
-   urls: [
-        "turn:bn-turn2.xirsys.com:80?transport=udp",
-       "turn:bn-turn2.xirsys.com:3478?transport=udp",
-       "turn:bn-turn2.xirsys.com:80?transport=tcp",
-       "turn:bn-turn2.xirsys.com:3478?transport=tcp",
-   ]
-}]
+    pc.addEventListener("icecandidate", (event) => {
+    if (event.candidate) {
+      const candidate = event.candidate.candidate;
+      if (candidate.includes("typ relay")) {
+        console.log("⚠️ Using TURN relay — slower");
+      } else if (candidate.includes("typ srflx") || candidate.includes("typ host")) {
+        console.log("✅ Using P2P (STUN) — fastest path");
+      }
+    }
+  });
 
-
-});
 
 
 if (pc) {
