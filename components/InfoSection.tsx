@@ -1,7 +1,6 @@
 "use client"
 import type React from "react"
 import { useState } from "react"
-import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 
 const features = [
@@ -156,37 +155,25 @@ const InfoSection = () => {
 
       {/* Features */}
        <section className="py-12 md:py-32 px-6 sm:px-12 lg:px-24 border-b border-white/10">
-      <div className="max-w-5xl mx-auto">
-        <h2 className="text-4xl md:text-5xl font-bold mb-12 tracking-tight">
-Packed with everything - Key Features
-        </h2>
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={{
-            visible: { transition: { staggerChildren: 0.05 } },
-          }}
-          className="flex flex-wrap gap-3 text-sm sm:text-base max-w-"
+  <div className="max-w-5xl mx-auto">
+    <h2 className="text-4xl md:text-5xl font-bold mb-12 tracking-tight">
+      Packed with everything - Key Features
+    </h2>
+    <div className="flex flex-wrap gap-3 text-sm sm:text-base">
+      {features.map((title, i) => (
+        <span
+          key={i}
+          className={`px-3 py-1.5 rounded bg-white/5 text-neutral-300 hover:bg-white/10 transition-colors duration-300 ${
+            title === "...and more" ? "opacity-60 italic" : ""
+          }`}
         >
-          {features.map((title, i) => (
-            <motion.span
-              key={i}
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0 },
-              }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-              className={`px-3 py-1.5 rounded bg-white/5 text-neutral-300 hover:bg-white/10   transition-colors duration-300 ${
-                title === "...and more" ? "opacity-60 italic" : ""
-              }`}
-            >
-              {title}
-            </motion.span>
-          ))}
-        </motion.div>
-      </div>
-    </section>
+          {title}
+        </span>
+      ))}
+    </div>
+  </div>
+</section>
+
 
 
       {/* Testimonials */}
