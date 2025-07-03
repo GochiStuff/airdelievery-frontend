@@ -145,7 +145,7 @@ export default function MainPage() {
               />
 
         {/* Tagline background */}
-        <section className="relative w-full mt-10 md:w-auto flex md:block flex-col items-center md:items-start text-center md:text-left justify-center">
+        <section className="relative  w-full mt-10 md:w-auto hidden md:block flex-col items-center md:items-start text-center md:text-left justify-center">
           <h1 className="text-6xl md:text-8xl font-extrabold drop-shadow-2xl select-none mb-2">
             FAST.
             <br className="block" />
@@ -160,6 +160,21 @@ export default function MainPage() {
             No cloud. No storage. Just you and the receiver—peer to peer.
           </p>
         </section>
+        <section className="relative md:hidden w-full flex flex-col items-center text-center px-6 mt space-y-3">
+          <h1 className="text-2xl font-semibold text-zinc-800">
+            Share instantly. No barriers.
+          </h1>
+          <p className="text-sm text-zinc-500">
+            Open the site on both devices and start sharing — no signups, no uploads.
+          </p>
+        </section>
+
+
+
+
+
+
+
 
         {/* section 2 */}
         <section className="flex relative items-center sm:items-start flex-col md:flex-row gap-2">
@@ -167,7 +182,7 @@ export default function MainPage() {
           {!flightId && (
             <div
               className="
-                z-50 p-2 mt-6 gap-2
+                z-50 p-2 md:mt-6 gap-2
                 grid
                 sm:absolute sm:-left-20
                 grid-flow-col auto-cols-max

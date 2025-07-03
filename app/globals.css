@@ -165,3 +165,14 @@
 .animate-spin-slow {
   animation: spin-slow 1.2s linear infinite;
 }
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
