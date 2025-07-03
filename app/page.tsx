@@ -14,7 +14,6 @@ export default function MainPage() {
   const router = useRouter();
   const { socket, user } = useSocket();
 
-  const [username, setUsername] = useState<string>("");
   const [flightCode, setFlightCode] = useState<string>("");
   const {
     flightId,
@@ -50,8 +49,6 @@ export default function MainPage() {
       });
     }
   };
-
-  useEffect(() => setUsername(user.name ?? ""), [user]);
 
   const handleJoin = () => {
     if (flightCode.trim()) {
@@ -307,7 +304,7 @@ export default function MainPage() {
                   airdelivery.site
                 </span>
                 <h2 className="text-3xl font-extrabold tracking-tight text-zinc-100 mt-2 mb-1">
-                  {username}
+                  {user.name}
                 </h2>
                 <span className="text-sm text-zinc-100 opacity-70">
                   Your file transfer ticket

@@ -545,7 +545,7 @@ export function useFileTransfer(
                 directoryPath,
                 blobUrl: "",
                 size,
-                downloaded,
+                downloaded, 
                 received: 0,
                 progress: 0,
                 status: "receiving",

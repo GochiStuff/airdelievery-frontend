@@ -87,9 +87,9 @@ const InfoSection = () => {
   }
 
   return (
-    <main className="bg-[#0A0A0A] text-white font-['Inter',sans-serif] antialiased">
+    <main className=" antialiased">
       {/* Hero Section */}
-      <section className="py-12 md:py-32 px-6 sm:px-12 lg:px-24 border-b border-white/10">
+      <section className="py-12 bg-zinc-950 text-white md:py-32 px-6 sm:px-12 lg:px-24 border-b border-white/10">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-none mb-8">
             Share files <span className="text-orange-500">instantly</span>.<br />
@@ -102,28 +102,28 @@ const InfoSection = () => {
       </section>
 
       {/* Stats */}
-      <section className="py-12 md:py-32 px-6 sm:px-12 lg:px-24 border-b border-white/10">
+      <section className="py-12 md:py-32 px-6 sm:px-12 lg:px-24 border-b bg-accent border-black/10">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold mb-6 md:mb-20 tracking-tight">The numbers speak</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-16">
             <div>
               <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-4">25,000+</p>
-              <p className="text-xl text-neutral-300">Files Shared</p>
+              <p className="text-xl text-neutral-700">Files Shared</p>
             </div>
             <div>
               <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-">7,000+</p>
-              <p className="text-xl text-neutral-300">Users in First Month</p>
+              <p className="text-xl text-neutral-700">Users in First Month</p>
             </div>
             <div>
               <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-">10,000+</p>
-              <p className="text-xl text-neutral-300">Share Sessions</p>
+              <p className="text-xl text-neutral-700">Share Sessions</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section className="py-12 md:py-32 px-6 sm:px-12 lg:px-24 border-b border-white/10">
+      <section className="py-12 md:py-32 px-6 sm:px-12 lg:px-24 border-b   border-black/10">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold mb-12 tracking-tight">How it works</h2>
           <ol className="space-y-12 text-xl">
@@ -132,7 +132,7 @@ const InfoSection = () => {
                 <h3 className="text-2xl font-semibold mb-2">
                   Open <span className="text-orange-500">airdelivery.site</span> on both devices
                 </h3>
-                <p className="text-neutral-400 leading-relaxed">
+                <p className="text-neutral-600 leading-relaxed">
                   Works on any modern browser, no installation required.
                 </p>
               </div>
@@ -140,13 +140,13 @@ const InfoSection = () => {
             <li className="flex items-start">
               <div>
                 <h3 className="text-2xl font-semibold mb-2">Share from one device, join from the other</h3>
-                <p className="text-neutral-400 leading-relaxed">Simple interface with minimal steps to connect.</p>
+                <p className="text-neutral-600 leading-relaxed">Simple interface with minimal steps to connect.</p>
               </div>
             </li>
             <li className="flex items-start">
               <div>
                 <h3 className="text-2xl font-semibold mb-2">Transfer directly, peer-to-peer</h3>
-                <p className="text-neutral-400 leading-relaxed">End-to-end encrypted with no server uploads.</p>
+                <p className="text-neutral-600 leading-relaxed">End-to-end encrypted with no server uploads.</p>
               </div>
             </li>
           </ol>
@@ -154,7 +154,7 @@ const InfoSection = () => {
       </section>
 
       {/* Features */}
-       <section className="py-12 md:py-32 px-6 sm:px-12 lg:px-24 border-b border-white/10">
+       <section className="py-12 md:py-32 px-6 sm:px-12 lg:px-24 border-b bg-zinc-900 text-white border-white/10">
   <div className="max-w-5xl mx-auto">
     <h2 className="text-4xl md:text-5xl font-bold mb-12 tracking-tight">
       Packed with everything - Key Features
@@ -192,7 +192,7 @@ const InfoSection = () => {
             ].map((t, i) => (
               <div
                 key={i}
-                className="bg-white/5 p-4 sm:p-6 text-left hover:bg-white/10 hover:text-orange-500 shadow hover:shadow-orange-500/50 transition-colors"
+                className=" p-4 sm:p-6 text-left  hover:bg-white/10 hover:text-orange-500 shadow-2xl hover:shadow-orange-500/50 transition-colors"
               >
                 <blockquote className="text-sm sm:text-base mb-4">"{t.quote}"</blockquote>
                 <footer className="text-xs sm:text-sm text-neutral-400">— {t.name}</footer>
@@ -204,7 +204,7 @@ const InfoSection = () => {
 
 
       {/* FAQ */}
-      <section className="py-12 md:py-32 px-6 sm:px-12 lg:px-24 border-b border-white/10">
+      <section className="py-12 md:py-3 px-6 sm:px-12 lg:px-24 border-b border-white/10">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold mb-20 tracking-tight">Frequently asked questions</h2>
           <div className="space-y-4">
@@ -238,7 +238,7 @@ const InfoSection = () => {
                 a: "Partial. Initial signaling requires internet. But if both devices are on the same WiFi, transfer generally don't use internet.",
               },
             ].map((faq, i) => (
-              <div key={i} className="border-b border-white/10 pb-4">
+              <div key={i} className="border-b border-black/15 pb-4">
                 <button
                   onClick={() => toggleFaq(i)}
                   className="w-full text-left flex justify-between items-center py-2 text-base sm:text-lg font-medium hover:text-orange-500 transition-colors"
@@ -256,7 +256,7 @@ const InfoSection = () => {
       </section>
 
       {/* Support */}
-      <section className="py-12 md:py-32 px-6 sm:px-12 lg:px-24 border-b border-white/10">
+      <section className="py-12 bg-zinc-900 text-white md:py-32 px-6 sm:px-12 lg:px-24 border-b border-white/10">
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">Support Air Delivery</h2>
           <p className="text-xl text-orange-400 max-w-3xl mx-auto leading-relaxed">
@@ -266,7 +266,7 @@ const InfoSection = () => {
       </section>
 
       {/* Feedback */}
-      <section id="feedback-section" className="py-12 md:py-32 px-6 sm:px-12 lg:px-24">
+      <section id="feedback-section" className="py-12 bg-zinc-900 text-white md:py-32 px-6 sm:px-12 lg:px-24">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">Get in touch</h2>
           <p className="text-xl text-neutral-400 mb-16 leading-relaxed">

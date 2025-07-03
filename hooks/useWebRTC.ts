@@ -82,9 +82,7 @@ export function useWebRTC(
     if (event.candidate) {
       const candidate = event.candidate.candidate;
       if (candidate.includes("typ relay")) {
-        console.log("⚠️ Using TURN relay — slower");
       } else if (candidate.includes("typ srflx") || candidate.includes("typ host")) {
-        console.log("✅ Using P2P (STUN) — fastest path");
       }
     }
   });
@@ -187,7 +185,6 @@ if (pc) {
   }
 
   const updateStats = (files: number, transferred: number) => {
-    console.log(files , transferred);
     socket?.emit("updateStats", {
       filesShared : files,
       Transferred: transferred,
