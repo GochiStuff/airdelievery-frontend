@@ -107,15 +107,15 @@ const InfoSection = () => {
           <h2 className="text-4xl md:text-5xl font-bold mb-6 md:mb-20 tracking-tight">The numbers speak</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-16">
             <div>
-              <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-4">15,000+</p>
+              <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-4">20,000+</p>
               <p className="text-xl text-neutral-300">Files Shared</p>
             </div>
             <div>
-              <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-">4,000+</p>
+              <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-">7,000+</p>
               <p className="text-xl text-neutral-300">Users in First Month</p>
             </div>
             <div>
-              <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-">7,000+</p>
+              <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-">10,000+</p>
               <p className="text-xl text-neutral-300">Share Sessions</p>
             </div>
           </div>
