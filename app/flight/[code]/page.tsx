@@ -17,11 +17,13 @@ import {
   ArrowUp,
   ArrowDown,
   Gauge,
+  AlertTriangle,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/badge";
 import { useWebRTCContext } from "@/context/WebRTCContext";
+import Image from "next/image";
 
 export default function RoomPage() {
   const { code } = useParams();
@@ -647,120 +649,112 @@ function QueueTray({
         ) : (
           items.map((item) => (
             <div
-              key={item.transferId}
-              className="w-56 flex-shrink-0 rounded-2xl border border-zinc-200 bg-white shadow hover:shadow-md transition p-4 flex flex-col"
-            >
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-10 h-10 bg-zinc-100 rounded-full flex items-center justify-center">
-                  <File className="w-5 h-5 text-zinc-600" />
-                </div>
-                <span className="text-sm font-medium text-zinc-900 text-center truncate w-full">
-                  {item.file?.name || item.name || item.directoryPath}
-                </span>
-                <div className="w-full bg-zinc-200 rounded-full h-2 mt-2">
-                  <div
-                    className="bg-orange-500 h-2 rounded-full transition-width duration-300"
-                    style={{ width: `${item.progress || 0}%` }}
-                  />
-                </div>
-                <div className="w-full flex justify-between text-xs text-zinc-500 mt-1">
-                  <span>{item.progress}%</span>
-                  <span>{statusLabels[item.status] || item.status}</span>
-                </div>
-              </div>
-              <div className="mt-4 flex justify-center gap-3">
-                {reciver ? (
-                  <>
-                    {item.status !== "done" && item.status !== "canceled" && (
-                      <button
-                        className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 transition"
-                        onClick={() =>
-                          cancelTransfer && cancelTransfer(item.transferId)
-                        }
-                        title="Cancel"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
+  key={item.transferId}
+  className="w-48 flex-shrink-0 rounded-2xl border border-zinc-100 bg-white shadow-md hover:shadow-lg transition-all duration-200 flex flex-col overflow-hidden"
+>
+  {/* Thumbnail or Icon */}
+  {item.thumbnail ? (
+    <div className="w-full h-32 bg-zinc-100">
+      <Image
+        src={item.thumbnail}
+        alt="Thumbnail"
+        width={224}
+        height={128}
+        className="w-full h-full object-cover"
+      />
+    </div>
+  ) : (
+    <div className="w-full h-32 bg-zinc-100 flex items-center justify-center">
+      <div className="w-12 h-12 rounded-full bg-zinc-200 flex items-center justify-center shadow-inner">
+        <File className="w-6 h-6 text-zinc-500" />
+      </div>
+    </div>
+  )}
 
-                    {item.status === "done" &&
-                    item.status !== "canceled" &&
-                    item.downloaded ? (
-                      <p className="text-xs font-bold text-zinc-500 text-mono">
-                        Already downloaded or is in disk.
-                      </p>
-                    ) : (
-                      <>
-                        {item.status === "done" &&
-                          item.status !== "canceled" &&
-                          !autoDownload &&
-                          item.blobUrl && (
-                            <button
-                              className="p-2 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-500 border border-blue-200 transition"
-                              //@ts-ignore
-                              onClick={() => fileDownload(item)}
-                              title="Download"
-                            >
-                              <Download className="w-4 h-4" />
-                            </button>
-                          )}
-                        {item.status === "done" &&
-                          item.status !== "canceled" &&
-                          !autoDownload &&
-                          item.blobUrl && (
-                            <></>
-                            // TODO
-                            // <button
-                            // className="p-2 rounded-full bg-yellow-50 hover:bg-yellow-100 text-yellow-500 border border-yellow-200 transition"
-                            // //@ts-ignore
-                            // onClick={() => openfile(item.blobUrl) }
-                            // title="open"
-                            // >
-                            //   <Play className="w-4 h-4" />
-                            // </button>
-                          )}
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {item.status === "paused" && (
-                      <button
-                        className="p-2 rounded-full bg-green-50 hover:bg-green-100 text-green-600 border border-green-200 transition"
-                        onClick={() =>
-                          resumeTransfer && resumeTransfer(item.transferId)
-                        }
-                        title="Resume"
-                      >
-                        <Play className="w-4 h-4" />
-                      </button>
-                    )}
-                    {item.status === "sending" && (
-                      <button
-                        className="p-2 rounded-full bg-yellow-50 hover:bg-yellow-100 text-yellow-600 border border-yellow-200 transition"
-                        onClick={() =>
-                          pauseTransfer && pauseTransfer(item.transferId)
-                        }
-                        title="Pause"
-                      >
-                        <Pause className="w-4 h-4" />
-                      </button>
-                    )}
-                    {item.status !== "done" && item.status !== "canceled" && (
-                      <button
-                        className="p-2 rounded-full bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 transition"
-                        onClick={() =>
-                          cancelTransfer && cancelTransfer(item.transferId)
-                        }
-                        title="Cancel"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
+  {/* File Info */}
+  <div className="flex flex-col items-center text-center px-3 py-2 gap-1">
+    <span className="text-sm font-medium text-zinc-800 truncate w-full">
+      {item.file?.name || item.name || item.directoryPath}
+    </span>
+
+    {/* Progress Bar */}
+    <div className="w-full h-1.5 rounded-full bg-zinc-200 overflow-hidden shadow-inner">
+      <div
+        className="h-full bg-orange-500 transition-all duration-300"
+        style={{ width: `${item.progress || 0}%` }}
+      />
+    </div>
+
+    {/* Status Row */}
+    <div className="w-full flex justify-between text-[11px] text-zinc-500 mt-1 font-medium">
+      <span>{item.progress}%</span>
+      <span>{statusLabels[item.status] || item.status}</span>
+    </div>
+  </div>
+
+  {/* Action Buttons */}
+  <div className="w-full flex justify-center items-center gap-2 py-2 mb-1 border-zinc-100">
+    {reciver ? (
+      <>
+        {item.status !== "done" && item.status !== "canceled" && (
+          <button
+            className="rounded-full p-1.5 bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 transition"
+            onClick={() => cancelTransfer?.(item.transferId)}
+            title="Cancel"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+        {item.status === "done" && item.downloaded ? (
+          <p className="text-[11px] text-zinc-500 font-semibold">Downloaded</p>
+        ) : (
+          item.status === "done" &&
+          !autoDownload &&
+          item.blobUrl && (
+            <button
+              className="rounded-full p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-500 border border-blue-200 transition"
+              onClick={() => fileDownload?.(item)}
+              title="Download"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+          )
+        )}
+      </>
+    ) : (
+      <>
+        {item.status === "paused" && (
+          <button
+            className="rounded-full p-1.5 bg-green-50 hover:bg-green-100 text-green-600 border border-green-200 transition"
+            onClick={() => resumeTransfer?.(item.transferId)}
+            title="Resume"
+          >
+            <Play className="w-4 h-4" />
+          </button>
+        )}
+        {item.status === "sending" && (
+          <button
+            className="rounded-full p-1.5 bg-yellow-50 hover:bg-yellow-100 text-yellow-600 border border-yellow-200 transition"
+            onClick={() => pauseTransfer?.(item.transferId)}
+            title="Pause"
+          >
+            <Pause className="w-4 h-4" />
+          </button>
+        )}
+        {item.status !== "done" && item.status !== "canceled" && (
+          <button
+            className="rounded-full p-1.5 bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 transition"
+            onClick={() => cancelTransfer?.(item.transferId)}
+            title="Cancel"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </>
+    )}
+  </div>
+</div>
+
           ))
         )}
       </div>

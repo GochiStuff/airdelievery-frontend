@@ -5,6 +5,7 @@ import PQueue from "p-queue";
 import pRetry from "p-retry";
 import { flattenFileList } from "@/utils/flattenFilelist";
 import { v4 } from "uuid";
+import { generateThumbnail } from "@/lib/generateThumbnail";
 
 type TransferStatus =
   | "queued"
@@ -22,6 +23,7 @@ type Transfer = {
   progress: number;
   speedBps: number;
   status: TransferStatus;
+  thumbnail?: string; 
 };
 
 type RecvTransfer = {
@@ -33,6 +35,7 @@ type RecvTransfer = {
   blobUrl?: string;
   downloaded?: boolean;
   status: TransferStatus;
+  thumbnail?: string; 
 };
 
 type Meta = {
@@ -168,33 +171,35 @@ export function useFileTransfer(
   }
 
   const handleFileSelect = useCallback(
-    async (e: ChangeEvent<HTMLInputElement>) => {
-      if (!e.target.files) return;
-      const files = await flattenFileList(e.target.files);
-      setQueue((prev) => {
-        const existingPaths = new Set(prev.map((t) => t.directoryPath));
-        const newTransfers: Transfer[] = files
-          .filter((f) => {
-            const path = (f as any).webkitRelativePath || f.name;
-            return !existingPaths.has(path);
-          })
-          .map((file) => {
-            const id = v4();
-            transferControls.current[id] = { paused: false, canceled: false };
-            return {
-              file,
-              transferId: id,
-              directoryPath: (file as any).webkitRelativePath || file.name,
-              progress: 0,
-              speedBps: 0,
-              status: "queued",
-            };
-          });
-        return [...prev, ...newTransfers];
-      });
-    },
-    []
-  );
+  async (e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = await flattenFileList(e.target.files);
+
+    const transfers = await Promise.all(
+      files.map(async (file) => {
+        const id = v4();
+        const thumb = await generateThumbnail(file);
+        transferControls.current[id] = { paused: false, canceled: false };
+        return {
+          file,
+          transferId: id,
+          directoryPath: (file as any).webkitRelativePath || file.name,
+          progress: 0,
+          speedBps: 0,
+          status: "queued" as const,
+          thumbnail: thumb,
+        };
+      })
+    );
+
+    setQueue((prev) => {
+      const existing = new Set(prev.map((t) => t.directoryPath));
+      return [...prev, ...transfers.filter(t => !existing.has(t.directoryPath))];
+    });
+  },
+  []
+);
+
 
   // READ FILE IN CHUNKS HELPER
   async function* readFileInChunks(file: File) {
@@ -242,7 +247,7 @@ export function useFileTransfer(
 
   // SEND
   const sendFile = useCallback(
-    async ({ file, transferId, directoryPath }: Transfer) => {
+    async ({ file, transferId, directoryPath  , thumbnail}: Transfer) => {
       if (!dataChannel) throw new Error("No dataChannel");
       if (dataChannel.readyState !== "open")
         throw new Error("Connection is not open");
@@ -257,7 +262,7 @@ export function useFileTransfer(
 
       // Send init
       dataChannel.send(
-        JSON.stringify({ type: "init", transferId, directoryPath, size: total })
+        JSON.stringify({ type: "init", transferId, directoryPath, size: total , thumbnail})
       );
 
       for await (const chunk of readFileInChunks(file)) {
@@ -448,7 +453,7 @@ export function useFileTransfer(
           console.warn("Received string but not JSON:", event.data);
           return;
         }
-        const { type, transferId, directoryPath, size } = msg;
+        const { type, transferId, directoryPath, size , thumbnail } = msg;
         // CHUNK HEADER
         if (type === "chunk") {
           currentReceivingIdRef.current = transferId;
@@ -544,6 +549,7 @@ export function useFileTransfer(
                 received: 0,
                 progress: 0,
                 status: "receiving",
+                thumbnail
               },
             ]);
           } catch (err) {

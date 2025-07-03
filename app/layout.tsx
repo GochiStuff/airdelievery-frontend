@@ -203,6 +203,7 @@ export default function RootLayout({
         />
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://www.google-analytics.com" />
+        {/* <link rel="preconnect" href={process.env.NEXT_PUBLIC_SOCKET}/> */}
 
         {/* Structured Data JSON-LD */}
         <script
