@@ -27,55 +27,41 @@ export const metadata: Metadata = {
     template: "%s | Secure & Instant P2P File Sharing"
   },
   description:
-    "Air Delivery: Instantly send large files via peer-to-peer WebRTC—no cloud, no sign-up, no limits. Secure, encrypted, browser-to-browser transfer.",
+     "Air Delivery lets you send large files instantly and securely with peer-to-peer WebRTC. No uploads, no sign-up, no file size limits. Just fast, private browser-to-browser sharing.",
+
   applicationName: "Air Delivery",
   authors: [
     { name: "Yash Jangid", url: "https://x.com/GochiStuff" }
   ],
   keywords: [
-    "Air Delivery",
-    "P2P file sharing",
-    "WebRTC file transfer",
-    "p2p file sharing",
-    "peer-to-peer file transfer",
-    "encrypted file sharing",
-    "send large files",
-    "no cloud sharing",
-    "file sharing",
-    "sharing p2p",
-    "send files",
-    "share it",
-    "sharedrop",
-    "airdrop",
-    "peer-to-peer file transfer",
-    "instant file sharing",
-    "large file transfer without cloud",
-    "direct browser file transfer",
-    "secure peer-to-peer sharing",
-    "encrypted file sharing",
-    "privacy-focused file transfer",
-    "send large files browser to browser",
-    "no-install file sharing",
-    "zero configuration file transfer",
-    "firewall friendly P2P transfer",
-    "anonymous file transfer online",
-    "fast browser P2P file sharing",
-    "transfer files without cloud storage",
-    "web-based peer-to-peer file sharing",
-    "secure WebRTC file sharing",
-    "instant P2P file send",
-    "direct device-to-device file transfer",
-    "file sharing without upload",
-    "peer-to-peer WebRTC app",
-    "unlimited file size transfer",
-    "no signup file sharing",
-  ],
+  "send large files",
+  "free file sharing",
+  "peer to peer file sharing",
+  "p2p file transfer",
+  "web based file sharing",
+  "no signup file transfer",
+  "encrypted file sharing",
+  "direct browser file sharing",
+  "large file transfer online",
+  "webrtc file transfer",
+  "instant file sharing",
+  "secure p2p file transfer",
+  "file sharing without upload",
+  "airdrop alternative",
+  "sharedrop alternative",
+  "file transfer without cloud",
+  "anonymous file sharing",
+  "fast browser file transfer",
+  "p2p file transfer no limits",
+  "send files peer to peer",
+],
+
   metadataBase: new URL("https://airdelivery.site"),
   openGraph: {
     title: "Air Delivery – Secure & Instant P2P File Sharing",
     description:
-      "Instantly send large files via peer-to-peer WebRTC—no cloud, no sign-up, no limits. Secure, encrypted, browser-to-browser transfer.",
-    url: "https://airdelivery.site",
+    "Air Delivery lets you send large files instantly and securely with peer-to-peer WebRTC. No uploads, no sign-up, no file size limits. Just fast, private browser-to-browser sharing."
+   ,  url: "https://airdelivery.site",
     siteName: "Air Delivery",
     images: [
       {
@@ -193,6 +179,8 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="author" content="Yash Jangid" />
         <link rel="canonical" href="https://airdelivery.site" />
+        <link rel="icon" href="/favicon.ico" />
+
 
         <link rel="manifest" href="/manifest.json" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

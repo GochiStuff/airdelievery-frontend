@@ -91,13 +91,13 @@ const InfoSection = () => {
       {/* Hero Section */}
       <section className="py-12 bg-zinc-950 text-white md:py-32 px-6 sm:px-12 lg:px-24 border-b border-white/10">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-none mb-8">
+          <h2 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-none mb-8">
             Share files <span className="text-orange-500">instantly</span>.<br />
             No middleman.
-          </h1>
-          <p className="text-xl md:text-2xl text-neutral-400 max-w-3xl leading-relaxed">
+          </h2>
+          <h1 className="text-xl md:text-2xl text-neutral-400 max-w-3xl leading-relaxed">
             Secure, encrypted peer-to-peer file sharing with no size limits, no sign-ups, and transfers at 100+ Mbps.
-          </p>
+          </h1>
         </div>
       </section>
 
@@ -235,7 +235,7 @@ const InfoSection = () => {
               },
               {
                 q: "Can I use this without internet?",
-                a: "Partial. Initial signaling requires internet. But if both devices are on the same WiFi, transfer generally don't use internet.",
+                a: "Yes, if both devices are on the same WiFi, transfer happens on the network only.",
               },
             ].map((faq, i) => (
               <div key={i} className="border-b border-black/15 pb-4">
@@ -247,7 +247,7 @@ const InfoSection = () => {
                   <span className="text-orange-500 text-xl">{openFaq === i ? "−" : "+"}</span>
                 </button>
                 {openFaq === i && (
-                  <div className="mt-2 text-sm sm:text-base text-neutral-400 leading-relaxed">{faq.a}</div>
+                  <div className="mt-2 text-sm sm:text-base text-neutral-600 leading-relaxed">{faq.a}</div>
                 )}
               </div>
             ))}

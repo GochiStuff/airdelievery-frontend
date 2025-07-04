@@ -39,7 +39,7 @@ export default function WhatsNewCard() {
       <button
         aria-label="What's New in Air Delivery"
         onClick={() => setOpen(true)}
-        className="text-sm font-medium text-zinc-300 hover:text-orange-500 transition-colors"
+        className="text-sm font-medium text-zinc-300 animate-pulse hover:text-orange-500 transition-colors"
       >
         What’s New?
       </button>

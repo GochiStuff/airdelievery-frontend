@@ -143,27 +143,27 @@ export default function MainPage() {
 
         {/* Tagline background */}
         <section className="relative  w-full mt-10 md:w-auto hidden md:block flex-col items-center md:items-start text-center md:text-left justify-center">
-          <h1 className="text-6xl md:text-8xl font-extrabold drop-shadow-2xl select-none mb-2">
+          <h2 className="text-6xl md:text-8xl font-extrabold drop-shadow-2xl select-none mb-2">
             FAST.
             <br className="block" />
             PRIVATE.
             <br className="block" />
             NO LIMIT.
-          </h1>
-          <h2 className="text-lg md:text-xl text-zinc-600 font-medium mt-1 max-w-md">
-            Send files directly between devices. Instantly.
           </h2>
+          <h1 className="text-lg md:text-xl text-zinc-600 font-medium mt-1 max-w-md">
+            Send files directly between devices. Instantly.
+          </h1>
           <p className="mt-1 text-sm mb-4 text-zinc-400 max-w-md">
             No cloud. No storage. Just you and the receiver—peer to peer.
           </p>
         </section>
         <section className="relative md:hidden w-full flex flex-col items-center text-center px-6 mt space-y-3">
           <h1 className="text-2xl font-semibold text-zinc-800">
-            Share instantly. No barriers.
+            Share files across devices.
           </h1>
-          <p className="text-sm text-zinc-500">
+          <h2 className="text-sm text-zinc-500">
             Open the site on both devices and start sharing — no signups, no uploads.
-          </p>
+          </h2>
         </section>
 
 
@@ -374,12 +374,12 @@ export default function MainPage() {
 
             <div className="bg-zinc-900 rounded-xl shadow-xl p-4 md:p-5 text-zinc-200 text-sm md:text-base max-w-md w-full space-y-3">
               <h2 className="text-2xl font-bold text-white tracking-tight">About</h2>
-              <p className="leading-relaxed text-zinc-400">
+              <h3 className="leading-relaxed text-zinc-400">
                 <span className="text-white font-medium">Airdelivery</span> is a
                 free, encrypted p2p file sharing tool. Files are sent
                 directly between devices — no uploads, no cloud, just speed and
                 privacy.
-              </p>
+              </h3>
 
               <div className="flex justify-between items-center mt-2">
                 <AboutCard />

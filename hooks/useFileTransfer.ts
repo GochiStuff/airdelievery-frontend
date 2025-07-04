@@ -21,6 +21,7 @@ type Transfer = {
   transferId: string;
   directoryPath: string;
   progress: number;
+  type?: "send" | "receive" 
   speedBps: number;
   status: TransferStatus;
   thumbnail?: string; 
@@ -33,6 +34,7 @@ type RecvTransfer = {
   received: number;
   progress: number;
   blobUrl?: string;
+  type: "send" | "receive"
   downloaded?: boolean;
   status: TransferStatus;
   thumbnail?: string; 
@@ -185,6 +187,7 @@ export function useFileTransfer(
           transferId: id,
           directoryPath: (file as any).webkitRelativePath || file.name,
           progress: 0,
+          
           speedBps: 0,
           status: "queued" as const,
           thumbnail: thumb,
@@ -370,6 +373,8 @@ export function useFileTransfer(
       return;
     }
 
+    let recSize = 0;
+
     try {
       while (rec.queue.length > 0) {
         const chunk = rec.queue.shift();
@@ -384,10 +389,8 @@ export function useFileTransfer(
             !rec.lastProgressUpdate ||
             Date.now() - rec.lastProgressUpdate > PROGRESS_INTERVAL_MS
           ) {
-            setMeta((m) => ({
-              ...m,
-              totalReceived: m.totalReceived + chunk.byteLength,
-            }));
+            
+         
             setRecvQueue((rq) =>
               rq.map((r) =>
                 r.transferId === transferId && r.status === "receiving"
@@ -426,6 +429,13 @@ export function useFileTransfer(
         rec.writer = null;
         currentReceivingIdRef.current = null;
         delete incoming.current[transferId];
+
+      const temp = meta.totalReceived + rec.received;
+      console.log(temp);
+      setMeta((m) => ({
+              ...m,
+              totalReceived: temp,
+            }));
         setRecvQueue((rq) =>
           rq.map((r) =>
             r.transferId === transferId
@@ -545,6 +555,7 @@ export function useFileTransfer(
                 directoryPath,
                 blobUrl: "",
                 size,
+                type:"receive",
                 downloaded, 
                 received: 0,
                 progress: 0,
