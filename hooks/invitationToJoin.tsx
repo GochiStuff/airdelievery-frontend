@@ -59,7 +59,7 @@ export function useInvitationToJoin() {
 }
 
   const InvitationPopup = invitation ? (
-    <div className="fixed top-4 right-4 z-50  animate-fadeIn">
+    <div className="fixed top-4 right-4 z-500  animate-fadeIn">
       <div className="bg-white border shadow-xl rounded-2xl  w-xs sm:w-sm overflow-hidden">
         <div className="p-4">
           <h2 className="text-lg font-bold text-gray-800 mb-1">Join Flight<span className="font-mono font-extrabold text-orange-600"> {invitation.flightCode}</span> ? </h2> 

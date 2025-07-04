@@ -431,7 +431,6 @@ export function useFileTransfer(
         delete incoming.current[transferId];
 
       const temp = meta.totalReceived + rec.received;
-      console.log(temp);
       setMeta((m) => ({
               ...m,
               totalReceived: temp,
