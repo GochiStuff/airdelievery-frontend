@@ -7,7 +7,6 @@ import {
   Share2,
   Users,
   User,
-  Heart,
   RefreshCwIcon,
   LogOut,
 } from "lucide-react";
@@ -17,6 +16,7 @@ import { useWebRTCContext } from "@/context/WebRTCContext";
 import { MetricsSection } from "@/components/room/MetricSection";
 import { QueueTray } from "@/components/room/QueueTray";
 import AsktoShareSection from "@/components/room/share";
+import SharePopup from "@/components/AskForShare";
 
 export default function RoomPage() {
   const { code } = useParams();
@@ -92,8 +92,11 @@ export default function RoomPage() {
 
   return (
     <main className="min-h-screen bg-gray-300 text-zinc-900 py-8 px-4 sm:px-6 lg:px-8">
+      <SharePopup/>
+      
       <div className="max-w-5xl mx-auto space-y-8">
-        {/* Header */}
+        
+
          {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white rounded-2xl shadow-xl p-6 sm:p-8 gap-6 mb-6 transition-all">
           {/* Left: Flight Info */}
@@ -334,6 +337,7 @@ export default function RoomPage() {
     </div>
   </div>
 </section>
+
 
         {/* Queue Preview under Upload */}
         <div className="mt-6 w-full space-y-6">
