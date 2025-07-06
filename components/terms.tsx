@@ -2,7 +2,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 export type TermsModalProps = {
   show: boolean;
@@ -20,7 +19,7 @@ const termsContent = [
   {
     heading: "1. File Transfers",
     items: [
-      "Air Delivery enables you to send files directly between two devices using WebRTC peer-to-peer connections.",
+      "Air Delivery enables you to send files directly between two devices using p2p connections.",
       "Files are never uploaded to or stored on any server we control. We only facilitate the signaling connection needed to establish the direct link.",
       "Transfers are ephemeral and end as soon as the browser tab is closed or the session ends.",
     ],
@@ -44,7 +43,7 @@ const termsContent = [
   {
     heading: "4. Security Disclaimer",
     items: [
-      "Air Delivery uses WebRTC for encrypted, direct connections, but we cannot guarantee absolute security due to the nature of internet communication.",
+      "Air Delivery encryptes the data, direct connections, but we cannot guarantee absolute security due to the nature of internet communication.",
       "Always verify the recipient and file before accepting a transfer. We are not responsible for any damages, losses, or issues resulting from file sharing via Air Delivery.",
     ],
   },
