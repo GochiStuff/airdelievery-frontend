@@ -7,6 +7,7 @@ import {
   Share2,
   Users,
   User,
+  ScanQrCode ,
   RefreshCwIcon,
   LogOut,
 } from "lucide-react";
@@ -135,11 +136,11 @@ export default function RoomPage() {
                 onClick={() => setShowQR((prev) => !prev)}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-md transition duration-200"
               >
-                <Share2 className="w-5 h-5" />
-                <span className="text-sm">Invite</span>
+                <ScanQrCode className="w-5 h-5 hidden md:inline" />
+                <span className="text-sm">Show</span>
               </button>
               <span className="text-xs hidden md:inline text-zinc-500 mt-1 sm:text-center">
-                Show QR / Code
+                Show QR or code
               </span>
             </div>
 
