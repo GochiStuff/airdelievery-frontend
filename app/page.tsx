@@ -85,17 +85,6 @@ export default function MainPage() {
   return (
     <>
 
-<div className="w-full md:hidden block bg-white border border-gray-200   px-4 py-2 mb-2">
-  <p className="text-gray-800 text-xs font-medium">
-    We're getting great feedback! Got a feature idea or suggestion?
-  </p>
-  <a
-    href="#feedback"
-    className="mt-2 inline-block text-blue-600 text-xs font-semibold underline underline-offset-2 hover:text-blue-700"
-  >
-    Send Feedback →
-  </a>
-</div>
 
 
 
@@ -176,19 +165,6 @@ export default function MainPage() {
             Open the site on both devices and start sharing — no signups, no uploads.
           </h2>
         </section>
-
-
-
-{/* FLOADING MESSAGE  */}
-<div className="absolute top-5 left-5 z-5 w-72 sm:w-80 md:block hidden bg-white border border-gray-200 shadow-xl rounded-2xl px-4 py-3 ">
-  <p className="text-gray-600 mt-1 text-sm">
-    Thanks for the love! Share it to support us. Got a feature idea? We’re all ears.
-  </p>
-  <a href="#feedback" className="mt-3 inline-block text-blue-600 text-sm font-medium hover:underline">
-    Give Feedback or Request a Featuer →
-  </a>
-</div>
-
 
 
 
