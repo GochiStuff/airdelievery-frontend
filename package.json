@@ -19,6 +19,7 @@
     "fflate": "^0.8.2",
     "idb-keyval": "^6.2.2",
     "lucide-react": "^0.515.0",
+    "lz4js": "^0.2.0",
     "nanoid": "^5.1.5",
     "next": "15.3.3",
     "p-queue": "^8.1.0",

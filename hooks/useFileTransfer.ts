@@ -3,6 +3,8 @@
 import { useState, useRef, ChangeEvent, useEffect, useCallback } from "react";
 import PQueue from "p-queue";
 import pRetry from "p-retry";
+// @ts-ignore
+import * as lz4 from 'lz4js';
 import { flattenFileList } from "@/utils/flattenFilelist";
 import { v4 } from "uuid";
 import { generateThumbnail } from "@/lib/generateThumbnail";
@@ -263,11 +265,13 @@ export function useFileTransfer(
       let lastTime = Date.now();
       let lastSent = 0;
 
+
       // Send init
       dataChannel.send(
         JSON.stringify({ type: "init", transferId, directoryPath, size: total , thumbnail})
       );
 
+      // stream  +  compress .
       for await (const chunk of readFileInChunks(file)) {
         // CONTROLS
         if (controls.canceled) {
@@ -285,6 +289,8 @@ export function useFileTransfer(
           dataChannel.send(JSON.stringify({ type: "resume", transferId }));
         }
 
+
+
         // Backpressure
         if (dataChannel.bufferedAmount > BUFFER_THRESHOLD) {
           await new Promise<void>((res) => {
@@ -299,7 +305,8 @@ export function useFileTransfer(
         if (dataChannel.readyState !== "open")
           throw new Error("Connection closed");
 
-        const packet = createPacket(transferId, chunk);
+        const compressed = lz4.compress(chunk);
+        const packet = createPacket(transferId, compressed);
         dataChannel.send(packet);
 
         // Progress track
@@ -639,7 +646,8 @@ export function useFileTransfer(
       const rec = incoming.current[transferId];
       if (!rec) return;
 
-      rec.queue.push(chunk);
+      const decompressed = lz4.decompress(new Uint8Array(chunk));
+      rec.queue.push(decompressed.buffer);
       if (!rec.writing) {
         rec.writing = true;
         ProcessRecQue(transferId);
