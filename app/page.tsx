@@ -142,29 +142,28 @@ export default function MainPage() {
               />
 
         {/* Tagline background */}
-        <section className="relative  w-full mt-10 md:w-auto hidden md:block flex-col items-center md:items-start text-center md:text-left justify-center">
-          <h2 className="text-6xl md:text-8xl font-extrabold drop-shadow-2xl select-none mb-2">
-            FAST.
-            <br className="block" />
-            PRIVATE.
-            <br className="block" />
-            NO LIMIT.
-          </h2>
-          <h1 className="text-lg md:text-xl text-zinc-600 font-medium mt-1 max-w-md">
-            Send files directly between devices. Instantly.
-          </h1>
-          <p className="mt-1 text-sm mb-4 text-zinc-400 max-w-md">
-            No cloud. No storage. Just you and the receiver—peer to peer.
-          </p>
-        </section>
-        <section className="relative md:hidden w-full flex flex-col items-center text-center px-6 mt space-y-3">
-          <h1 className="text-2xl font-semibold text-zinc-800">
-            Share files across devices.
-          </h1>
-          <h2 className="text-sm text-zinc-500">
-            Open the site on both devices and start sharing — no signups, no uploads.
-          </h2>
-        </section>
+<section className="relative w-full mt-10 md:w-auto hidden md:block flex-col items-center md:items-start text-center md:text-left justify-center">
+  <h2 className="text-6xl md:text-8xl font-extrabold drop-shadow-2xl select-none mb-2">
+    SHARE.<br className="block" />
+    FILES.<br className="block" />
+    INSTANTLY.
+  </h2>
+  <h1 className="text-lg md:text-xl text-zinc-600 font-medium mt-1 max-w-md">
+    The fastest and most private way to send files — peer to peer.
+  </h1>
+  <p className="mt-1 text-sm mb-4 text-zinc-400 max-w-md">
+    No cloud. No limits. Just you and the receiver.
+  </p>
+</section>
+
+<section className="relative md:hidden w-full flex flex-col items-center text-center px-6 mt space-y-3">
+  <h1 className="text-2xl font-semibold text-zinc-800">
+    Share files instantly across devices.
+  </h1>
+  <h2 className="text-sm text-zinc-500">
+    Open the site on both devices — no signups, no uploads, just P2P.
+  </h2>
+</section>
 
 
 
@@ -372,38 +371,39 @@ export default function MainPage() {
               </code>
             </div>
 
-            <div className="bg-zinc-900 rounded-xl shadow-xl p-4 md:p-5 text-zinc-200 text-sm md:text-base max-w-md w-full space-y-3">
-              <h2 className="text-2xl font-bold text-white tracking-tight">About</h2>
-              <h3 className="leading-relaxed text-zinc-400">
-                <span className="text-white font-medium">Airdelivery</span> is a
-                free, encrypted p2p file sharing tool. Files are sent
-                directly between devices — no uploads, no cloud, just speed and
-                privacy.
-              </h3>
+           <div className="bg-zinc-900 rounded-xl shadow-xl p-4 md:p-5 text-zinc-200 text-sm md:text-base max-w-md w-full space-y-3">
+  <h2 className="text-2xl font-bold text-white tracking-tight">About</h2>
+  <p className="leading-relaxed text-zinc-400">
+    <span className="text-white font-medium">Airdelivery</span> lets you send files instantly, securely, and directly — no signups, no uploads, no limits.
+  </p>
+  <p className="text-zinc-500 text-xs">
+    Peer-to-peer, encrypted, and works across all modern devices.
+  </p>
 
-              <div className="flex justify-between items-center mt-2">
-                <AboutCard />
+  <div className="flex justify-between items-center mt-2">
+    <AboutCard />
 
-                <a
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                    "Check out Airdelivery.io for fast, private, unlimited P2P file sharing! No hassle, just send or receive. #FileSharing #P2P #Airdelivery"
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-zinc-50 hover:text-orange-400 transition"
-                  title="Share on Twitter"
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M17.53 3H21l-7.19 8.21L22 21h-6.56l-5.18-6.44L4.47 21H1l7.64-8.73L2 3h6.68l4.74 5.91L17.53 3ZM16.3 19h2.13l-5.82-7.23-1.71 1.98L16.3 19ZM5.09 5l5.38 6.69 1.7-1.97L7.36 5H5.09Z" />
-                  </svg>
-                </a>
-              </div>
-            </div>
+    <a
+      href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+        "Check out Airdelivery.io — fast, secure, unlimited P2P file sharing. No cloud, no signup. #Airdelivery #FileSharing"
+      )}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-zinc-50 hover:text-orange-400 transition"
+      title="Share on Twitter"
+    >
+      <svg
+        width="20"
+        height="20"
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M17.53 3H21l-7.19 8.21L22 21h-6.56l-5.18-6.44L4.47 21H1l7.64-8.73L2 3h6.68l4.74 5.91L17.53 3ZM16.3 19h2.13l-5.82-7.23-1.71 1.98L16.3 19ZM5.09 5l5.38 6.69 1.7-1.97L7.36 5H5.09Z" />
+      </svg>
+    </a>
+  </div>
+</div>
+
           </div>
         </section>
       </main>
