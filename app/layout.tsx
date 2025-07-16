@@ -181,6 +181,8 @@ export default function RootLayout({
         <link rel="canonical" href="https://airdelivery.site" />
         <link rel="icon" href="/favicon.ico" />
 
+        <meta name="google-adsense-account" content="ca-pub-6215596158227491"></meta>
+
 
         <link rel="manifest" href="/manifest.json" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
