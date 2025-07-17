@@ -299,76 +299,79 @@ const flushBufferedCandidates = async () => {
 
   const router = useRouter();
   useEffect(() => {
-    if (!socket) return;
+  if (!socket) return;
 
-    socket.on("nearbyUsers" , ( users : Member[] ) => {
-      setNearByUsers(users);
-    })  
-
-  
-
-    if (!flightCode) {
-      log("Invalid room code.");
-      return () => {
-              socket.off("nearbyUsers");
-      };
-    }
-    
-
-   
-
-    socket.emit("joinFlight", flightCode, (resp: { success: boolean; message?: string }) => {
-      if (resp.success) {
-        log("Joined signaling.");
-      } else {
-        if(resp.message === "Flight is full"){
-            router.push('/flightFull');
-        }else{ 
-          log(`Failed to join: ${resp.message}`);
-        }
-      }
-    });
+  // Always setup listeners first
+  socket.on("offer", async (id, { sdp }) => {
+  if (!sdp) {
+    log("Failed : missing payload");
+    return;
+  }
+  await handleOffer(id, sdp.sdp);
+});
 
 
-    socket.on("offer", async (id, { sdp }) => {
-      await handleOffer(id, sdp.sdp);
-    });
+  socket.on("answer", async ({ sdp }) => {
+    await handleAnswer(sdp);
+  });
 
-    socket.on("answer", async ({ sdp }) => {
-      await handleAnswer(sdp);
-    });
+  socket.on("ice-candidate", async ({ candidate, id }) => {
+    await handleIce(id, candidate);
+  });
 
-    socket.on("ice-candidate", async ({ candidate, id }) => {
-      await handleIce(id, candidate);
-    });
+  socket.on("nearbyUsers", (users: Member[]) => {
+    setNearByUsers(users);
+  });
 
-        
-    socket.on("flightUsers", ({ ownerId: oid, members: m }) => {
-      setOwnerId(oid);
-      setMembers(m);
-
-      if (socket?.id === oid && !peer.current) {
-        // Initiate as sender
-        peer.current = createPeer(oid);
-        initiateSender();
-      }
-
-      socket.emit("getNearbyUsers");
-    });
-
+  // Only now, join the flight
+  if (!flightCode) {
+    log("Invalid room code.");
     return () => {
-      socket.off("flightUsers");
+      socket.off("nearbyUsers");
       socket.off("offer");
       socket.off("answer");
       socket.off("ice-candidate");
-      socket.off("nearbyUsers");
-
-      if (peer.current) {
-        peer.current.close();
-        peer.current = null;
-      }
     };
-  }, [socket, flightCode]);
+  }
+
+  socket.emit("joinFlight", flightCode, (resp: { success: boolean; message?: string }) => {
+    if (resp.success) {
+      log("Joined signaling.");
+    } else {
+      if (resp.message === "Flight is full") {
+        router.push("/flightFull");
+      } else {
+        log(`Failed to join: ${resp.message}`);
+      }
+    }
+  });
+
+  socket.on("flightUsers", ({ ownerId: oid, members: m }) => {
+    setOwnerId(oid);
+    setMembers(m);
+
+    if (socket?.id === oid && !peer.current) {
+      peer.current = createPeer(oid);
+      initiateSender();
+    }
+
+    socket.emit("getNearbyUsers");
+  });
+
+  return () => {
+    socket.off("flightUsers");
+    socket.off("offer");
+    socket.off("answer");
+    socket.off("ice-candidate");
+    socket.off("nearbyUsers");
+
+    if (peer.current) {
+      peer.current.close();
+      peer.current = null;
+    }
+  };
+}, [socket, flightCode]);
+
 
   return { 
     dataChannel: dataChannel.current, 
