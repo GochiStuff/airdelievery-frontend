@@ -151,7 +151,6 @@ if (pc) {
 
   const offer = await peer.current.createOffer();
   await peer.current.setLocalDescription(offer);
-flushBufferedCandidates();
 
   log("Preparing offer...")
   // Emit offer immediately — don't wait for full ICE
@@ -210,7 +209,6 @@ flushBufferedCandidates();
     const answer = await peer.current.createAnswer();
 
     await peer.current.setLocalDescription(answer);
-    flushBufferedCandidates();
 
     
 await new Promise(resolve => {
