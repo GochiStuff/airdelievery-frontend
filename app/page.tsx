@@ -282,7 +282,7 @@ export default function MainPage() {
                         {m.name}
                       </span>
                       <code className="text-[0.7rem] text-zinc-800 break-words text-center">
-                        ID: {m.id}
+                        ID: {m.id ? m.id: "Connecting..."}
                       </code>
                       <code className="mt-1 text-[0.7rem] text-zinc-700 bg-white/70 border border-dotted border-black rounded-xl px-2 py-1">
                         Drop files to send

@@ -202,6 +202,8 @@ if (pc) {
       e.channel.onopen = () => log("DataChannel opened")
     }
 
+    console.log(sdp);
+
     await peer.current.setRemoteDescription(sdp);
     flushBufferedCandidates();
     const answer = await peer.current.createAnswer();
