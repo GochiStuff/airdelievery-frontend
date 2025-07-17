@@ -10,7 +10,7 @@ function userMessage(msg: string) {
   if (msg.includes("Answer sent")) return "Offer accepted...";
   if (msg.includes("Remote description set")) return "finalizing...";
   if (msg.includes("Added ICE candidate")) return "Connection improved";
-  if (msg.includes("Buffered ICE candidate")) return "ready to connect...";
+  if (msg.includes("Buffered ICE candidate")) return "wait...";
   if (msg.includes("Joined signaling")) return "Joined room, waiting";
   if (msg.includes("Failed to join")) return "Failed to join room";
   if (msg.includes("Invalid room code")) return "Invalid room code";
@@ -151,6 +151,7 @@ if (pc) {
 
   const offer = await peer.current.createOffer();
   await peer.current.setLocalDescription(offer);
+flushBufferedCandidates();
 
   log("Preparing offer...")
   // Emit offer immediately — don't wait for full ICE
@@ -209,6 +210,8 @@ if (pc) {
     const answer = await peer.current.createAnswer();
 
     await peer.current.setLocalDescription(answer);
+    flushBufferedCandidates();
+
     
 await new Promise(resolve => {
   if (peer.current?.iceGatheringState === 'complete') {
