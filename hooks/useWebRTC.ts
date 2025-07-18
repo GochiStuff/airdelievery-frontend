@@ -64,12 +64,7 @@ export function useWebRTC(
     //  Fast, Public STUN Servers
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:19302" },
-    { urls: "stun:stun3.l.google.com:19302" },
-    { urls: "stun:stun4.l.google.com:19302" },
     { urls: "stun:global.stun.twilio.com:3478" },
-    { urls: "stun:stun.stunprotocol.org:3478" },
-    { urls: "stun:openrelay.metered.ca:80" }, // very fast, Canadian CDN
 
     //  TURN Servers (Fallback only if STUN fails)
     {
@@ -163,28 +158,28 @@ if (pc) {
 
   log("Preparing offer...")
   // Emit offer immediately — don't wait for full ICE
+  
+  socket?.emit("offer", flightCode, { sdp: peer.current.localDescription });
+  log("Offer sent.");
+  // if (peer.current.localDescription) {
 
-  if (peer.current.localDescription) {
+  //   await new Promise(resolve => {
+  //   if (peer.current?.iceGatheringState === 'complete') {
+  //     resolve(null);
+  //   } else {
+  //     const checkState = () => {
+  //       if (peer.current?.iceGatheringState === 'complete') {
+  //         peer.current?.removeEventListener('icegatheringstatechange', checkState);
+  //         resolve(null);
+  //       }
+  //     };
+  //     peer.current?.addEventListener('icegatheringstatechange', checkState);
+  //   }
+  // });
 
-    await new Promise(resolve => {
-    if (peer.current?.iceGatheringState === 'complete') {
-      resolve(null);
-    } else {
-      const checkState = () => {
-        if (peer.current?.iceGatheringState === 'complete') {
-          peer.current?.removeEventListener('icegatheringstatechange', checkState);
-          resolve(null);
-        }
-      };
-      peer.current?.addEventListener('icegatheringstatechange', checkState);
-    }
-  });
-
-    socket?.emit("offer", flightCode, { sdp: peer.current.localDescription });
-    log("Offer sent.");
-  } else {
-    log("failed preparing offer.");
-  }
+  // } else {
+  //   log("failed preparing offer.");
+  // }
 }
 
 
