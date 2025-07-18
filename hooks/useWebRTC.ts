@@ -58,25 +58,34 @@ export function useWebRTC(
     const TURN_CREDENTIAL = process.env.NEXT_PUBLIC_TURN_CREDENTIAL || "";
 
   
-  
+
      const pc = new RTCPeerConnection({
-      iceServers: [
-        {
-          urls: [ "stun:global.stun.twilio.com:3478" ] // Reliable and fast
-        },
-        {
-          urls: [
-            "turn:bn-turn2.xirsys.com:80?transport=udp",
-            "turn:bn-turn2.xirsys.com:3478?transport=udp",
-            "turn:bn-turn2.xirsys.com:80?transport=tcp",
-            "turn:bn-turn2.xirsys.com:3478?transport=tcp"
-          ],
-          username: TURN_USERNAME,
-          credential: TURN_CREDENTIAL
-        }
+  iceServers: [
+    //  Fast, Public STUN Servers
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
+    { urls: "stun:global.stun.twilio.com:3478" },
+    { urls: "stun:stun.stunprotocol.org:3478" },
+    { urls: "stun:openrelay.metered.ca:80" }, // very fast, Canadian CDN
+
+    //  TURN Servers (Fallback only if STUN fails)
+    {
+      urls: [
+        "turn:bn-turn2.xirsys.com:80?transport=udp",
+        "turn:bn-turn2.xirsys.com:3478?transport=udp",
+        "turn:bn-turn2.xirsys.com:80?transport=tcp",
+        "turn:bn-turn2.xirsys.com:3478?transport=tcp"
       ],
-      iceTransportPolicy: "all", // allows STUN first, fallback to TURN
-    });
+      username: TURN_USERNAME,
+      credential: TURN_CREDENTIAL
+    }
+  ],
+  iceTransportPolicy: "all" // allow STUN first, fallback to TURN
+});
+
 
     pc.addEventListener("icecandidate", (event) => {
     if (event.candidate) {
