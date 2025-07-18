@@ -10,7 +10,7 @@ function userMessage(msg: string) {
   if (msg.includes("Answer sent")) return "Offer accepted...";
   if (msg.includes("Remote description set")) return "finalizing...";
   if (msg.includes("Added ICE candidate")) return "Connection improved";
-  if (msg.includes("Buffered ICE candidate")) return "this might take a sec...";
+  if (msg.includes("Buffered ICE candidate")) return "Connecting ...";
   if (msg.includes("Joined signaling")) return "Joined room, waiting";
   if (msg.includes("Failed to join")) return "Failed to join room";
   if (msg.includes("Invalid room code")) return "Invalid room code";
