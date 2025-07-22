@@ -169,6 +169,8 @@ export default function RootLayout({
 
       <head>
 
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6215596158227491"
+     crossOrigin="anonymous"></script>
 
 
         <meta charSet="utf-8" />
@@ -218,6 +220,9 @@ export default function RootLayout({
       <body
         className={`${oswald.variable} ${geistMono.variable} antialiased`}
       >
+{/* @ts-ignore */}
+<amp-auto-ads type="adsense" data-ad-client="ca-pub-6215596158227491" />
+
         <SocketProvider>
         <Providers>
           
