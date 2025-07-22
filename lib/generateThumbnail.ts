@@ -2,7 +2,7 @@ export async function generateThumbnail(file: File): Promise<string> {
   const type = file.type;
   const TARGET_W = 1280;
   const TARGET_H = 720;
-  const QUALITY = 0.7;              // JPEG quality 0–1 for compression
+  const QUALITY = 0.7;              // JPEG quality 0–1  compression
 
   // helper to draw & resize
   const drawToCanvas = (videoOrImg: HTMLVideoElement | HTMLImageElement) => {
