@@ -151,8 +151,19 @@ export default function MainPage() {
   <h1 className="text-lg md:text-xl text-zinc-600 font-medium mt-1 max-w-md">
     The fastest and most private way to send files — peer to peer.
   </h1>
-  <p className="mt-1 text-sm mb-4 text-zinc-400 max-w-md">
+  <p className="mt-1 text-sm mb-2 text-zinc-400 max-w-md">
     No cloud. No limits. Just you and the receiver.
+  </p>
+  <p className="text-xs text-zinc-500 max-w-md">
+    Sponsored and made free by{" "}
+    <a 
+      href="https://cobbic.com" 
+      target="_blank" 
+      rel="noopener noreferrer" 
+      className="underline hover:text-zinc-700"
+    >
+      Cobbic.com
+    </a>
   </p>
 </section>
 
@@ -163,7 +174,19 @@ export default function MainPage() {
   <h2 className="text-sm text-zinc-500">
     Open the site on both devices — no signups, no uploads, just P2P.
   </h2>
+  <p className="text-xs text-zinc-400">
+    Sponsored by{" "}
+    <a 
+      href="https://cobbic.com" 
+      target="_blank" 
+      rel="noopener noreferrer" 
+      className="underline hover:text-zinc-600"
+    >
+      Cobbic.com
+    </a>
+  </p>
 </section>
+
 
 
 
