@@ -107,15 +107,15 @@ const InfoSection = () => {
           <h2 className="text-4xl md:text-5xl font-bold mb-6 md:mb-20 tracking-tight">The numbers speak</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-16">
             <div>
-              <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-4">500GBs+</p>
+              <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-4">TBs+</p>
               <p className="text-xl text-neutral-700">Data Shared</p>
             </div>
             <div>
-              <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-">10K+</p>
+              <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-">20K+</p>
               <p className="text-xl text-neutral-700">Users in First Month</p>
             </div>
             <div>
-              <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-">15K+</p>
+              <p className="text-5xl font-bold text-orange-500 mb-2 md:mb-">27K+</p>
               <p className="text-xl text-neutral-700">Share Sessions</p>
             </div>
           </div>
@@ -203,6 +203,7 @@ const InfoSection = () => {
       </section>
 
 
+
       {/* FAQ */}
       <section className="py-12 md:py-3 px-6 sm:px-12 lg:px-24 border-b border-white/10">
         <div className="max-w-5xl mx-auto">
@@ -256,14 +257,36 @@ const InfoSection = () => {
       </section>
 
       {/* Support */}
-      <section className="py-12 bg-zinc-900 text-white md:py-32 px-6 sm:px-12 lg:px-24 border-b border-white/10">
-        <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">Support Air Delivery</h2>
-          <p className="text-xl text-orange-400 max-w-3xl mx-auto leading-relaxed">
-            No asks. Just share it with someone who needs it. That's more than enough.
-          </p>
-        </div>
-      </section>
+<section className="relative py-20 bg-zinc-900 text-white md:py-32 px-6 sm:px-12 lg:px-24 border-b border-white/10 overflow-hidden">
+  {/* Background Overlay */}
+  <div className="absolute bottom-0 left-0 text-[12rem] sm:text-[16rem] md:text-[16rem] font-extrabold text-white/5 select-none pointer-events-none">
+    COBBIC.COM
+  </div>
+
+  <div className="relative max-w-5xl mx-auto text-center">
+    <h2 className="text-5xl md:text-6xl font-extrabold mb-6 tracking-tight">
+      <span className="text-orange-500">Cobbic.com</span> — the reason we’re free ✨
+    </h2>
+    <p className="text-lg md:text-xl text-neutral-400 max-w-3xl mx-auto leading-relaxed mb-8">
+      Explore spaces that match your passions. Curate, save, and organize the ideas that inspire you with a single permanent URL for all your queries, topics, collections, and communities.
+    </p>
+    <p className="text-xl text-orange-400 max-w-3xl mx-auto leading-relaxed mb-10">
+      Support <span className="font-semibold">Air Delivery</span>: no asks, no paywalls — just <span className="">share it with someone who needs it</span>.  
+      That’s more than enough 🚀
+    </p>
+    <a
+      href="https://cobbic.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-lg px-6 py-3 rounded-2xl shadow-lg transition-all duration-300 group"
+    >
+      Visit Cobbic.com
+      <span className="animate-spin-slow">🌀</span>
+    </a>
+  </div>
+</section>
+
+
 
       {/* Feedback */}
       <section id="feedback" className="py-12 bg-zinc-900 text-white md:py-32 px-6 sm:px-12 lg:px-24">

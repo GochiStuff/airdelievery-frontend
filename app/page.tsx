@@ -154,17 +154,18 @@ export default function MainPage() {
   <p className="mt-1 text-sm mb-2 text-zinc-400 max-w-md">
     No cloud. No limits. Just you and the receiver.
   </p>
-  <p className="text-xs text-zinc-500 max-w-md">
-    Sponsored and made free by{" "}
-    <a 
-      href="https://cobbic.com" 
-      target="_blank" 
-      rel="noopener noreferrer" 
-      className="underline hover:text-zinc-700"
-    >
-      Cobbic.com
-    </a>
-  </p>
+<p className="text-lg text-zinc-600 max-w-md flex items-center gap-1">
+  Sponsored and made free by{" "}
+  <a
+    href="https://cobbic.com"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="font-semibold text-blue-600 hover:text-blue-800 underline underline-offset-4 decoration-wavy transition-colors duration-200"
+  >
+    Cobbic.com
+  </a>
+</p>
+
 </section>
 
 <section className="relative md:hidden w-full flex flex-col items-center text-center px-6 mt space-y-3">
