@@ -154,17 +154,7 @@ export default function MainPage() {
   <p className="mt-1 text-sm mb-2 text-zinc-400 max-w-md">
     No cloud. No limits. Just you and the receiver.
   </p>
-<p className="text-lg text-zinc-600 max-w-md flex items-center gap-1">
-  Sponsored and made free by{" "}
-  <a
-    href="https://cobbic.com"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="font-semibold text-blue-600 hover:text-blue-800 underline underline-offset-4 decoration-wavy transition-colors duration-200"
-  >
-    Cobbic.com
-  </a>
-</p>
+
 
 </section>
 
@@ -175,17 +165,7 @@ export default function MainPage() {
   <h2 className="text-sm text-zinc-500">
     Open the site on both devices — no signups, no uploads, just P2P.
   </h2>
-  <p className="text-xs text-zinc-400">
-    Sponsored by{" "}
-    <a 
-      href="https://cobbic.com" 
-      target="_blank" 
-      rel="noopener noreferrer" 
-      className="underline hover:text-zinc-600"
-    >
-      Cobbic.com
-    </a>
-  </p>
+
 </section>
 
 

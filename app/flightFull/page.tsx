@@ -1,5 +1,3 @@
-// pages/flight-full.tsx
-
 "use client";
 import { ArrowLeftCircle } from "lucide-react";
 import Link from "next/link";

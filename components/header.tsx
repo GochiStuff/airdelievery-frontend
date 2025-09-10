@@ -30,7 +30,7 @@ export default function Header() {
         </div>
 
         {/* Desktop Nav */}
-<nav className="hidden md:flex items-center gap-2 text-sm md:text-base font-medium text-zinc-700">
+{/* <nav className="hidden md:flex items-center gap-2 text-sm md:text-base font-medium text-zinc-700">
   <span className="opacity-90 animate-spin-slow">⚡</span>
   <Link
     href="https://cobbic.com"
@@ -42,7 +42,7 @@ export default function Header() {
       Join the awesome community of Cobbic
     </span>
   </Link>
-</nav>
+</nav> */}
 
 
         {/* Mobile Sidebar */}
@@ -68,7 +68,7 @@ export default function Header() {
                   </SheetTitle>
                 </div>
               </SheetHeader>
-
+{/* 
               <nav className="flex flex-col gap-4 text-zinc-700 text-sm font-medium">
   <Link
     href="https://cobbic.com"
@@ -81,7 +81,7 @@ export default function Header() {
     </span>
     <span className="opacity-70 group-hover:translate-x-1 transition-transform duration-200">🚀</span>
   </Link>
-</nav>
+</nav> */}
 
             </SheetContent>
           </Sheet>
