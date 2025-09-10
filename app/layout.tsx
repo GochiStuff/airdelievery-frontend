@@ -1,7 +1,7 @@
   import type { Metadata } from "next";
   import {  Geist_Mono } from "next/font/google";
   import "./globals.css";
-  import { SocketProvider } from "@/hooks/socketContext";
+  import { SocketProvider } from "@/context/socketContext";
   import Header from "@/components/header";
   import { Oswald } from "next/font/google";
   import { Analytics } from "@vercel/analytics/next"

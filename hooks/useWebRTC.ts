@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useSocket } from "@/hooks/socketContext";
+import { useSocket } from "@/context/socketContext";
 import { useRouter } from "next/navigation";
 type Candidate = RTCIceCandidateInit;
 

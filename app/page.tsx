@@ -1,10 +1,10 @@
 "use client";
 
 import React, { ChangeEvent, useEffect, useState } from "react";
-import { useSocket } from "@/hooks/socketContext";
+import { useSocket } from "@/context/socketContext";
 import { useRouter } from "next/navigation";
 import AboutCard from "@/components/aboutCard";
-import { useInvitationToJoin } from "@/hooks/invitationToJoin";
+import { useInvitationToJoin } from "@/components/invitationToJoin";
 import { useWebRTCContext } from "@/context/WebRTCContext";
 import InfoSection from "@/components/InfoSection";
 import TermsModal from "@/components/terms";

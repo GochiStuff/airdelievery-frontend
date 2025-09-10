@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSocket } from "./socketContext";
+import { useSocket } from "../context/socketContext";
 import { useRouter } from "next/navigation";
 
 type Invitation = {
