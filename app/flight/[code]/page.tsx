@@ -12,7 +12,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { Badge } from "@/components/badge";
+import { Badge } from "@/lib/badge";
 import { useWebRTCContext } from "@/context/WebRTCContext";
 import { MetricsSection } from "@/components/room/MetricSection";
 import { QueueTray } from "@/components/room/QueueTray";
@@ -45,7 +45,6 @@ export default function RoomPage() {
     pauseTransfer,
     status,
     members,
-    openFile,
     refreshNearby,
     inviteToFlight,
     nearByUsers,

@@ -9,7 +9,6 @@ import { useWebRTCContext } from "@/context/WebRTCContext";
 import InfoSection from "@/components/InfoSection";
 import TermsModal from "@/components/terms";
 
-
 export default function MainPage() {
   const router = useRouter();
   const { socket, user } = useSocket();
@@ -33,13 +32,11 @@ export default function MainPage() {
   }, [flightId]);
 
   const handleCreate = async () => {
-
     const accepted = localStorage.getItem("acceptedTerms");
-    if (!accepted) 
-      {
-        setShowTerms(true);
-        return;
-      }
+    if (!accepted) {
+      setShowTerms(true);
+      return;
+    }
     if (!socket) return;
     if (flightId) {
       router.push(`/flight/${flightId}`);
@@ -72,24 +69,17 @@ export default function MainPage() {
 
   const [showTerms, setShowTerms] = useState(false);
 
-
   const handleAccept = () => {
     localStorage.setItem("acceptedTerms", "true");
   };
-
-
 
   const invitationPop = useInvitationToJoin();
   const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   return (
     <>
-
-
-
-
       {/* Main content */}
-      
+
       <main className="relative flex mb-10 flex-col md:flex-row items-center max-w-9xl mx-auto justify-around min-h-screen overflow-hidden">
         {invitationPop}
         {flightId && (
@@ -135,49 +125,44 @@ export default function MainPage() {
           </div>
         )}
 
-          <TermsModal
-                show={showTerms}
-                onClose={() => setShowTerms(false)}
-                onAccept={handleAccept}
-              />
+        <TermsModal
+          show={showTerms}
+          onClose={() => setShowTerms(false)}
+          onAccept={handleAccept}
+        />
 
         {/* Tagline background */}
-<section className="relative w-full mt-10 md:w-auto hidden md:block flex-col items-center md:items-start text-center md:text-left justify-center">
-  <h2 className="text-6xl md:text-8xl font-extrabold drop-shadow-2xl select-none mb-2">
-    SHARE.<br className="block" />
-    FILES.<br className="block" />
-    INSTANTLY.
-  </h2>
-  <h1 className="text-lg md:text-xl text-zinc-600 font-medium mt-1 max-w-md">
-    The fastest and most private way to send files — peer to peer.
-  </h1>
-  <p className="mt-1 text-sm mb-2 text-zinc-400 max-w-md">
-    No cloud. No limits. Just you and the receiver.
-  </p>
+        <section className="relative w-full mt-10 md:w-auto hidden md:block flex-col items-center md:items-start text-center md:text-left justify-center">
+          <h2 className="text-6xl md:text-8xl font-extrabold drop-shadow-2xl select-none mb-2">
+            SHARE.
+            <br className="block" />
+            FILES.
+            <br className="block" />
+            INSTANTLY.
+          </h2>
+          <h1 className="text-lg md:text-xl text-zinc-600 font-medium mt-1 max-w-md">
+            The fastest and most private way to send files — peer to peer.
+          </h1>
+          <p className="mt-1 text-sm mb-2 text-zinc-400 max-w-md">
+            No cloud. No limits. Just you and the receiver.
+          </p>
+        </section>
 
-
-</section>
-
-<section className="relative md:hidden w-full flex flex-col items-center text-center px-6 mt space-y-3">
-  <h1 className="text-2xl font-semibold text-zinc-800">
-    Share files instantly across devices.
-  </h1>
-  <h2 className="text-sm text-zinc-500">
-    Open the site on both devices — no signups, no uploads, just P2P.
-  </h2>
-
-</section>
-
-
-
-
-
-
+        <section className="relative md:hidden w-full flex flex-col items-center text-center px-6 mt space-y-3">
+          <h1 className="text-2xl font-semibold text-zinc-800">
+            Share files instantly across devices.
+          </h1>
+          <h2 className="text-sm text-zinc-500">
+            Open the site on both devices — no signups, no uploads, just P2P.
+          </h2>
+        </section>
 
         {/* section 2 */}
-        <section aria-labelledby="nearby-users" className="flex relative items-center sm:items-start flex-col md:flex-row gap-2">
+        <section
+          aria-labelledby="nearby-users"
+          className="flex relative items-center sm:items-start flex-col md:flex-row gap-2"
+        >
           {/* nearByUsers grid */}
-
 
           {!flightId && (
             <div
@@ -233,11 +218,14 @@ export default function MainPage() {
                       }
                     }}
                     onClick={() => {
-                      socket?.emit("createFlight", (response: { code: string }) => {
-                        connectToFlight(response.code);
-                        inviteToFlight(m, response.code);
-                        router.push(`/flight/${response.code}`);
-                      });
+                      socket?.emit(
+                        "createFlight",
+                        (response: { code: string }) => {
+                          connectToFlight(response.code);
+                          inviteToFlight(m, response.code);
+                          router.push(`/flight/${response.code}`);
+                        }
+                      );
                     }}
                     onDrop={async (e) => {
                       e.preventDefault();
@@ -245,10 +233,13 @@ export default function MainPage() {
                       setDragOverId(null);
                       if (!socket) return;
                       if (flightId) return;
-                      socket.emit("createFlight", (response: { code: string }) => {
-                        connectToFlight(response.code);
-                        inviteToFlight(m, response.code);
-                      });
+                      socket.emit(
+                        "createFlight",
+                        (response: { code: string }) => {
+                          connectToFlight(response.code);
+                          inviteToFlight(m, response.code);
+                        }
+                      );
                       const items = e.dataTransfer.items;
                       const files: File[] = [];
                       for (let i = 0; i < items.length; i++) {
@@ -286,12 +277,14 @@ export default function MainPage() {
                         {m.name}
                       </span>
                       <code className="text-[0.7rem] text-zinc-800 break-words text-center">
-                        ID: {m.id ? m.id: "Connecting..."}
+                        ID: {m.id ? m.id : "Connecting..."}
                       </code>
                       <code className="mt-1 text-[0.7rem] text-zinc-700 bg-white/70 border border-dotted border-black rounded-xl px-2 py-1">
                         Drop files to send
                       </code>
-                      <span className="text-[0.7rem]">click to quick create a flight</span>
+                      <span className="text-[0.7rem]">
+                        click to quick create a flight
+                      </span>
                     </div>
                   </div>
                 );
@@ -314,12 +307,13 @@ export default function MainPage() {
                 </span>
               </div>
 
-            
               {/* File and Folder Section */}
               <div className="flex flex-row space-x-4 w-full mb-2 px-8">
                 <label className="flex flex-col flex-1 items-center text-zinc-700 px-8 py-3 rounded-xl bg-zinc-100 hover:bg-zinc-100 font-semibold shadow-lg transition-all transform hover:-translate-y-1 cursor-pointer ">
                   <span>
-                    {flightId ? "You're currently in a flight...." : "Tap to start sending"}
+                    {flightId
+                      ? "You're currently in a flight...."
+                      : "Tap to start sending"}
                   </span>
                   <button className="hidden" onClick={handleCreate} />
                 </label>
@@ -357,7 +351,13 @@ export default function MainPage() {
                   className="p-3 rounded-2xl shadow-lg bg-zinc-900 hover:bg-zinc-800 transition"
                 >
                   {/* Paperplane SVG icon */}
-                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                  <svg
+                    width="24"
+                    height="24"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
                     <path
                       d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"
                       fill="#ffffff"
@@ -375,44 +375,47 @@ export default function MainPage() {
               </code>
             </div>
 
-           <div className="bg-zinc-900 rounded-xl shadow-xl p-4 md:p-5 text-zinc-200 text-sm md:text-base max-w-md w-full space-y-3">
-  <h2 className="text-2xl font-bold text-white tracking-tight">About</h2>
-  <p className="leading-relaxed text-zinc-400">
-    <span className="text-white font-medium">Airdelivery</span> lets you send files instantly, securely, and directly — no signups, no uploads, no limits.
-  </p>
-  <p className="text-zinc-500 text-xs">
-    Peer-to-peer, encrypted, and works across all modern devices.
-  </p>
+            <div className="bg-zinc-900 rounded-xl shadow-xl p-4 md:p-5 text-zinc-200 text-sm md:text-base max-w-md w-full space-y-3">
+              <h2 className="text-2xl font-bold text-white tracking-tight">
+                About
+              </h2>
+              <p className="leading-relaxed text-zinc-400">
+                <span className="text-white font-medium">Airdelivery</span> lets
+                you send files instantly, securely, and directly — no signups,
+                no uploads, no limits.
+              </p>
+              <p className="text-zinc-500 text-xs">
+                Peer-to-peer, encrypted, and works across all modern devices.
+              </p>
 
-  <div className="flex justify-between items-center mt-2">
-    <AboutCard />
+              <div className="flex justify-between items-center mt-2">
+                <AboutCard />
 
-    <a
-      href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-        "Check out Airdelivery.io — fast, secure, unlimited P2P file sharing. No cloud, no signup. #Airdelivery #FileSharing"
-      )}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-zinc-50 hover:text-orange-400 transition"
-      title="Share on Twitter"
-    >
-      <svg
-        width="20"
-        height="20"
-        fill="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path d="M17.53 3H21l-7.19 8.21L22 21h-6.56l-5.18-6.44L4.47 21H1l7.64-8.73L2 3h6.68l4.74 5.91L17.53 3ZM16.3 19h2.13l-5.82-7.23-1.71 1.98L16.3 19ZM5.09 5l5.38 6.69 1.7-1.97L7.36 5H5.09Z" />
-      </svg>
-    </a>
-  </div>
-</div>
-
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                    "Check out Airdelivery.io — fast, secure, unlimited P2P file sharing. No cloud, no signup. #Airdelivery #FileSharing"
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-zinc-50 hover:text-orange-400 transition"
+                  title="Share on Twitter"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M17.53 3H21l-7.19 8.21L22 21h-6.56l-5.18-6.44L4.47 21H1l7.64-8.73L2 3h6.68l4.74 5.91L17.53 3ZM16.3 19h2.13l-5.82-7.23-1.71 1.98L16.3 19ZM5.09 5l5.38 6.69 1.7-1.97L7.36 5H5.09Z" />
+                  </svg>
+                </a>
+              </div>
+            </div>
           </div>
         </section>
       </main>
 
-      <InfoSection/>
+      <InfoSection />
     </>
   );
 }

@@ -1,10 +1,7 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
 import React, { useState } from "react";
-import FeedbackPopup from "./Feedback";
 import { useRouter } from "next/navigation";
-import { url } from "inspector";
 
 const whatsNewInfo = [
   

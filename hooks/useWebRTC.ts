@@ -61,25 +61,9 @@ export function useWebRTC(
 
      const pc = new RTCPeerConnection({
   iceServers: [
-    //  Fast, Public STUN Servers
-    
-    { urls: "stun:stun.l.google.com:19302" },
-    { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:global.stun.twilio.com:3478" },
-
-    //  TURN Servers (Fallback only if STUN fails)
-    {
-      urls: [
-        "turn:bn-turn2.xirsys.com:80?transport=udp",
-        "turn:bn-turn2.xirsys.com:3478?transport=udp",
-        "turn:bn-turn2.xirsys.com:80?transport=tcp",
-        "turn:bn-turn2.xirsys.com:3478?transport=tcp"
-      ],
-      username: TURN_USERNAME,
-      credential: TURN_CREDENTIAL
-    }
-  ],
-  iceTransportPolicy: "all" // allow STUN first, fallback to TURN
+{ urls: "stun:stun.l.google.com:19302" },
+{ urls: "stun:stun1.l.google.com:19302" },
+{ urls: "stun:global.stun.twilio.com:3478" },]
 });
 
 
@@ -162,25 +146,6 @@ if (pc) {
   
   socket?.emit("offer", flightCode, { sdp: peer.current.localDescription });
   log("Offer sent.");
-  // if (peer.current.localDescription) {
-
-  //   await new Promise(resolve => {
-  //   if (peer.current?.iceGatheringState === 'complete') {
-  //     resolve(null);
-  //   } else {
-  //     const checkState = () => {
-  //       if (peer.current?.iceGatheringState === 'complete') {
-  //         peer.current?.removeEventListener('icegatheringstatechange', checkState);
-  //         resolve(null);
-  //       }
-  //     };
-  //     peer.current?.addEventListener('icegatheringstatechange', checkState);
-  //   }
-  // });
-
-  // } else {
-  //   log("failed preparing offer.");
-  // }
 }
 
 

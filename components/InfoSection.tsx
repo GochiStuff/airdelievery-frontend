@@ -176,7 +176,7 @@ const InfoSection = () => {
 
 
 
-      {/* Testimonials */}
+      {/* Testimonials - THESE ARE ALL  FROM EITHER THE FEED BACK   OR THE REDDIT */}
       <section className="py-12 md:py-32 px-6 sm:px-12 lg:px-24 border-b border-white/10">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold mb-20 tracking-tight">What people say</h2>

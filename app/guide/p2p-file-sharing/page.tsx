@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Metadata } from 'next';
 
+// TOTALLY AI GENERATE CONTENT BUT WAS LATER REVIEWED 
 export const metadata: Metadata = {
   title: 'Ultimate Guide to P2P File Sharing | AirDelivery – Instant WebRTC File Transfer',
   description:
