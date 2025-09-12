@@ -176,7 +176,6 @@ export function useWebRTC(onMessage: (e: MessageEvent) => void) {
       e.channel.onopen = () => log("DataChannel opened");
     };
 
-    console.log(sdp);
 
     // Apply remote description, flush any buffered ICE candidates,
     // create answer and set local description

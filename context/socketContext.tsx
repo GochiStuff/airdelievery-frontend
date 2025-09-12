@@ -31,7 +31,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
    const [ user , setuser ] = useState<User>( { id : "Unkown" , name: "Unkown"});
 
     useEffect(() => {
-        const newSocket = io(process.env.NEXT_PUBLIC_SOCKET!, {
+        const newSocket = io(process.env.NEXT_PUBLIC_SOCKET || "http://localhost:5500", {
         transports: ['websocket'], 
         withCredentials: true 
         });
@@ -50,7 +50,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
     const reconnect = () => {
     socket?.disconnect();
 
-    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET!, {
+    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET || "http://locahost:5500", {
         transports: ['websocket'],
         withCredentials: true
     });

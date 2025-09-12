@@ -36,7 +36,7 @@ const InfoSection = () => {
   const [status, setStatus] = useState<"idle" | "sending" | "thanks" | "error">("idle")
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
-  const url = process.env.NEXT_PUBLIC_SOCKET
+  const url = process.env.NEXT_PUBLIC_SOCKET || "http://localhost:5500"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
