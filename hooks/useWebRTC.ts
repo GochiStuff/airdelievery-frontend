@@ -26,7 +26,7 @@ type Member = {
 };
 
 export function useWebRTC(onMessage: (e: MessageEvent) => void) {
-  const isDebug = true;
+  const isDebug = false;
   const [flightCode, setFlightCode] = useState<string | null>(null);
   const { socket } = useSocket();
   const peer = useRef<RTCPeerConnection | null>(null);
@@ -69,7 +69,6 @@ export function useWebRTC(onMessage: (e: MessageEvent) => void) {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
-        { urls: "stun:global.stun.twilio.com:3478" },
       ],
     });
 
@@ -243,7 +242,6 @@ export function useWebRTC(onMessage: (e: MessageEvent) => void) {
   }
 
   // Sender: handle incoming answer
-// Sender: handle incoming answer
   async function handleAnswer(sdp: RTCSessionDescriptionInit, remoteId: string) { 
     if (isDebug) console.log("DEBUG: handleAnswer() called from remoteId:", remoteId);
     if (peer.current) {
