@@ -62,8 +62,7 @@ const termsContent = [
       "Last updated: June 20, 2025",
     ],
   },
-  {
-  },
+
 ];
 
 
