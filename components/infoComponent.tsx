@@ -63,10 +63,6 @@ const termsContent = [
     ],
   },
   {
-    heading: "Contact",
-    items: [
-      "Have questions, feedback, or legal inquiries? Contact the developer at: gsdevelopment04@gmail.com",
-    ],
   },
 ];
 

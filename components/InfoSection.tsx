@@ -265,16 +265,7 @@ const InfoSection = () => {
       <section id="feedback" className="py-12 bg-zinc-900 text-white md:py-32 px-6 sm:px-12 lg:px-24">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">Get in touch</h2>
-          <p className="text-xl text-neutral-400 mb-16 leading-relaxed">
-            Questions? Email us at{" "}
-            <a
-              href="mailto:gsdevelopment4@gmail.com"
-              className="text-white underline underline-offset-4 hover:text-orange-500 transition-colors duration-300"
-            >
-              gsdevelopment4@gmail.com
-            </a>
-            {" or DM me"}
-          </p>
+         
 
           {status === "thanks" ? (
             <div className="text-center py-16">

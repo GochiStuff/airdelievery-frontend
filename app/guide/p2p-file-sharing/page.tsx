@@ -786,10 +786,7 @@ export default function Page() {
                       </a>
                     </li>
                   </ul>
-                <p>
-                  <strong>Support & Feedback:</strong> If you encounter any issues or have suggestions, please
-                  reach out via gmail : gsdevelopment4@gmail.com
-               </p>
+  
                 <p>
                   Thank you for choosing AirDelivery for your P2P file sharing needs. Happy sharing!
                 </p>

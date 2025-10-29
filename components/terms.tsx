@@ -58,12 +58,7 @@ const termsContent = [
     heading: "Updates to These Terms",
     items: ["Last updated: June 20, 2025"],
   },
-  {
-    heading: "Contact",
-    items: [
-      "Have questions, feedback, or legal inquiries? Contact the developer at: gsdevelopment4@gmail.com",
-    ],
-  },
+
 ];
 
 export default function TermsModal({ show, onClose, onAccept }: TermsModalProps) {
