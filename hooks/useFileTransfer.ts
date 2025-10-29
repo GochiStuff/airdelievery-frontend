@@ -50,14 +50,11 @@ type Meta = {
   speedBps: number;
 };
 
-// --------------------------- Hook export --------------------------------
-
 export function useFileTransfer(
   dataChannel: RTCDataChannel | null,
   disconnect: () => void,
   updateStats: (files: number, transfer: number) => void
 ) {
-  // --- React state ------------------------------------------------------
   const [queue, setQueue] = useState<Transfer[]>([]);
   const [recvQueue, setRecvQueue] = useState<RecvTransfer[]>([]);
   const [meta, setMeta] = useState<Meta>({
@@ -73,7 +70,6 @@ export function useFileTransfer(
   const BUFFER_THRESHOLD = CHUNK_SIZE * 8;
   const PROGRESS_INTERVAL_MS = 500;
 
-  // --- Incoming streams state (mutable refs) ---------------------------
   // We store partial incoming transfers here to avoid re-rendering on each chunk
   const incoming = useRef<
     Record<
@@ -92,11 +88,8 @@ export function useFileTransfer(
   // track which transfer is currently being processed by the writer
   const currentReceivingIdRef = useRef<string | null>(null);
 
-  // --- Send queue / concurrency control --------------------------------
-  // PQueue ensures we only process one send at a time (original behavior)
   const pq = useRef(new PQueue({ concurrency: 1 }));
 
-  // Controls per transfer (pause/resume/cancel)
   const transferControls = useRef<
     Record<
       string,
@@ -109,7 +102,6 @@ export function useFileTransfer(
     >
   >({});
 
-  // Friendly status map for UI display
   const statusMap: Record<TransferStatus, string> = {
     queued: "Waiting to send",
     sending: "Transferring",
@@ -127,7 +119,6 @@ export function useFileTransfer(
     blobUrl: string;
     directoryPath: string;
   }) {
-    // Trigger a browser download for a received blob URL and mark it downloaded
     const a = document.createElement("a");
 
     a.href = file.blobUrl;
@@ -152,12 +143,10 @@ export function useFileTransfer(
   }
 
   function openFile(blobUrl: string) {
-    // Open a blob URL in a new tab (useful for previews)
     window.open(blobUrl, "_blank", "noopener,noreferrer");
   }
 
   async function downloadAll() {
-    // Download all completed and not-yet-downloaded files sequentially
     for (const file of recvQueue) {
       if (file.status === "done" && file.blobUrl && !file.downloaded) {
         const a = document.createElement("a");
@@ -167,13 +156,11 @@ export function useFileTransfer(
         a.click();
         a.remove();
 
-        // small delay between downloads to avoid blocking the UI
         await new Promise((res) => setTimeout(res, 100));
       }
     }
   }
 
-  // Auto-download toggle for small received files
   const [autoDownload, setAutoDownload] = useState(false);
   function tryAutoDownload(url: string, filename: string) {
     if (autoDownload) {
@@ -189,11 +176,9 @@ export function useFileTransfer(
     }
   }
 
-  // ------------------------ File selection handler ----------------------
   const handleFileSelect = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files) return;
-      // flatten directories into a list of files preserving relative paths
       const files = await flattenFileList(e.target.files);
 
       const transfers = await Promise.all(
@@ -222,9 +207,7 @@ export function useFileTransfer(
     []
   );
 
-  // ----------------------- File reading helpers -------------------------
 
-  // Read file as a stream and yield CHUNK_SIZE Uint8Array chunks
   async function* readFileInChunks(file: File) {
     const reader = file.stream().getReader();
     let buffer = new Uint8Array(0);
@@ -247,7 +230,7 @@ export function useFileTransfer(
     return c;
   }
 
-  // Create a binary packet with [transferIdLength][transferId][chunkSize][chunk]
+  // [transferIdLength][transferId][chunkSize][chunk]
   function createPacket(transferId: string, chunk: Uint8Array) {
     const transferIdBuf = new TextEncoder().encode(transferId);
     const headerSize = 4 + transferIdBuf.length + 4;
@@ -285,14 +268,12 @@ export function useFileTransfer(
       let lastTime = Date.now();
       let lastSent = 0;
 
-      // Notify receiver an init message with metadata
       dataChannel.send(
         JSON.stringify({ type: "init", transferId, directoryPath, size: total, thumbnail })
       );
 
-      // Stream file in chunks, compress and send each chunk
       for await (const chunk of readFileInChunks(file)) {
-        // Controls: canceled / paused
+        
         if (controls.canceled) {
           dataChannel.send(JSON.stringify({ type: "cancel", transferId }));
           setQueue((q) =>
@@ -308,7 +289,7 @@ export function useFileTransfer(
           dataChannel.send(JSON.stringify({ type: "resume", transferId }));
         }
 
-        // Backpressure handling: wait until buffered amount drops
+        // Backpressure 
         if (dataChannel.bufferedAmount > BUFFER_THRESHOLD) {
           await new Promise<void>((res) => {
             const listener = () => {
@@ -365,9 +346,8 @@ export function useFileTransfer(
     [dataChannel]
   );
 
-  // ------------------------- RECEIVE helpers ---------------------------
+  // ------------------------- RECEIVE  ---------------------------
   function unpack(buffer: ArrayBuffer) {
-    // Reverse of createPacket: read transferId and chunk
     const view = new DataView(buffer);
     let offset = 0;
 
@@ -473,10 +453,8 @@ export function useFileTransfer(
     }
   }
 
-  // ---------------------------- RECEIVE --------------------------------
   const handleMessage = useCallback(
     async (event: MessageEvent) => {
-      // If message is a string, treat it as control JSON
       if (typeof event.data === "string") {
         let msg: any;
         try {
@@ -487,7 +465,6 @@ export function useFileTransfer(
         }
         const { type, transferId, directoryPath, size, thumbnail } = msg;
 
-        // The remote signals it will send chunked data next
         if (type === "chunk") {
           currentReceivingIdRef.current = transferId;
           return;
@@ -869,7 +846,7 @@ export function useFileTransfer(
     userStatus: statusMap[t.status],
   }));
 
-  // --------------------------- Return API ------------------------------
+  // --------------------------- Return ------------------------------
   return {
     queue: userQueue,
     downloadAll,
